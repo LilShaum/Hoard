@@ -152,9 +152,9 @@ xpForDeposit(cents) = round( 10 + 12 * ln(1 + dollars / 10) )
 |---|---|
 | $5 | 15 |
 | $20 | 23 |
-| $50 | 31 |
-| $200 | 46 |
-| $1,000 | 68 |
+| $50 | 32 |
+| $200 | 47 |
+| $1,000 | 65 |
 | $5,000 | 85 |
 
 Anti-farm rule: only the **first 3 deposits per calendar day** earn XP. Splitting
@@ -162,16 +162,16 @@ $60 into twelve $5 drops earns less than logging it once.
 
 Other XP sources:
 - Completing a quest: **50–150 XP** by tier (daily / weekly / monthly).
-- Finishing a vault: `200 + 40 * ln(1 + target$/100)` (≈ 200–450 XP).
+- Finishing a vault: `200 + 40 * ln(1 + target$/100)` (≈ 200–400 XP).
 - Each week of streak survived: `25 + 5 * min(streak, 20)` (30 → 125 XP).
 - Hitting the monthly target: **300 XP**.
 - Unlocking an achievement: its own XP value (25–500).
 
 ### 5.2 Levels
 Cumulative XP to reach level *n*: `50 * (n-1)^1.75`, rounded to the nearest 10.
-Level 2 at 50 XP, level 5 at ~490, level 10 at ~2,240, level 25 at ~14,600,
-level 50 at ~53,300. Early levels come fast (first-session dopamine), later ones
-are a genuine long game.
+Level 2 at 50 XP, level 5 at 570, level 10 at 2,340, level 15 at 5,070, level 28
+at 15,990, level 50 at 45,370, capped at level 60. Early levels come fast
+(first-session dopamine), later ones are a genuine long game.
 
 ### 5.3 Streaks
 - Unit is the **ISO week** (Mon–Sun). A week counts if it contains ≥1 deposit.

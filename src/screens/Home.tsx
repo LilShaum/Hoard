@@ -5,7 +5,7 @@ import { useCountUp } from '@/ui/useCountUp'
 import { Ring } from '@/ui/Ring'
 import { Bar } from '@/ui/Bar'
 import { VaultCard, QuestRow, ActivityRow } from '@/ui/parts'
-import { IconFlame, IconPlus, IconSnow, IconSpark } from '@/ui/Icons'
+import { IconFlame, IconPlus, IconSnow, IconSpark, IconTrash } from '@/ui/Icons'
 import { todayISO } from '@/domain/dates'
 import { toast } from '@/ui/toast'
 import { haptic, soundClaim } from '@/ui/feedback'
@@ -190,6 +190,18 @@ export function Home({ onSave, navigate }: Props) {
                   vaultName={v?.name ?? 'General hoard'}
                   vaultEmoji={v?.emoji ?? '🪙'}
                   money={fmt.money}
+                  action={
+                    <button
+                      className="btn btn--bare btn--icon activity__del"
+                      aria-label={`Delete this ${fmt.money(e.amount)} entry`}
+                      onClick={() => {
+                        dispatch({ type: 'entry/delete', id: e.id })
+                        toast('Entry removed', '↩️')
+                      }}
+                    >
+                      <IconTrash size={15} />
+                    </button>
+                  }
                 />
               )
             })}

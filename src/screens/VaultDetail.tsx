@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { dispatch, useHoard } from '@/store/store'
 import { useFormat } from '@/app/format'
 import { Ring } from '@/ui/Ring'
-import { Bar } from '@/ui/Bar'
 import { Sheet } from '@/ui/Sheet'
 import { ActivityRow, PaceBadge } from '@/ui/parts'
 import { IconBack, IconEdit, IconPlus, IconTrash } from '@/ui/Icons'
@@ -248,13 +247,6 @@ export function VaultDetail({ vaultId, navigate, onSave }: Props) {
           {vault.archived ? 'Restore vault' : 'Archive vault'}
         </button>
       </div>
-
-      {vault.target != null && vault.target > 0 && (
-        <div className="stack stack--sm">
-          <span className="tiny faint">Progress bar, for the road</span>
-          <Bar value={pace.fraction} tall tone="vault" label="Vault progress" />
-        </div>
-      )}
 
       <VaultEditor open={editing} onClose={() => setEditing(false)} vault={vault} />
 

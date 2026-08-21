@@ -85,6 +85,19 @@ await shot('14-achievements')
 await page.goto(`${BASE}#/profile`, { waitUntil: 'networkidle' })
 await shot('15-profile')
 
+// 2b. A couple of unlocked themes, to prove the token swap.
+for (const [i, name] of [[4, 'royal'], [7, 'aurum']]) {
+  await page.goto(`${BASE}#/profile`, { waitUntil: 'networkidle' })
+  const opt = page.locator('.themeopt:not(.is-locked)').nth(i)
+  if (await opt.count()) {
+    await opt.click()
+    await page.goto(`${BASE}#/home`, { waitUntil: 'networkidle' })
+    await shot(`18-theme-${name}`)
+  }
+}
+await page.goto(`${BASE}#/profile`, { waitUntil: 'networkidle' })
+await page.locator('.themeopt:not(.is-locked)').first().click()
+
 // 3. Desktop width — same page, so the demo data is still loaded.
 await page.setViewportSize({ width: 1280, height: 900 })
 await page.goto(`${BASE}#/home`, { waitUntil: 'networkidle' })
