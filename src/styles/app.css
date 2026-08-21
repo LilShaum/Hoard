@@ -1115,3 +1115,13 @@ body[data-reduce-motion='true'] *::after {
   line-height: 1.45;
   word-break: break-all;
 }
+
+/* The amount container already shows focus; the input's own ring inside it
+   reads as a second, nested box. */
+.amount__input:focus-visible { outline: none; }
+
+/* Bare buttons used as inline links should read as text, not as a full-width
+   centred control. */
+.btn--bare { justify-content: flex-start; min-height: 34px; }
+.btn--bare.btn--icon { justify-content: center; }
+.section-title .btn--bare { justify-content: flex-end; min-height: 0; }

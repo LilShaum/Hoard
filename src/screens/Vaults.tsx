@@ -37,9 +37,9 @@ export function Vaults({ navigate }: { navigate: (r: Route) => void }) {
           </button>
         </div>
         {d.generalSaved > 0 && (
-          <p className="tiny faint">
-            Plus {fmt.money(d.generalSaved)} in the general hoard, not tied to a vault.
-          </p>
+          <button className="btn btn--bare tiny faint" onClick={() => navigate({ name: 'activity' })}>
+            Plus {fmt.money(d.generalSaved)} in the general hoard, not tied to a vault →
+          </button>
         )}
       </section>
 

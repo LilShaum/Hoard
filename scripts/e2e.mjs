@@ -258,6 +258,35 @@ await check('the progress screen draws its charts on real data', async () => {
   assert.ok((await page.locator('.ach').count()) > 20, 'achievements missing')
 })
 
+/* --------------------------------------------------------------- activity */
+await check('the activity ledger lists and filters the full history', async () => {
+  await go('activity')
+  const rows = await page.locator('.activity').count()
+  assert.ok(rows > 10, `expected a full ledger, saw ${rows} rows`)
+  await page.getByRole('button', { name: 'Money out' }).click()
+  await page.waitForTimeout(400)
+  const outRows = await page.locator('.activity').count()
+  assert.ok(outRows > 0 && outRows < rows, 'the money-out filter did nothing')
+  assert.ok(!/\+\$/.test(await page.locator('.activity__amount').first().innerText()))
+})
+
+await check('the ledger can isolate the general hoard', async () => {
+  await page.getByRole('button', { name: 'All', exact: true }).click()
+  await page.getByRole('button', { name: /General hoard/ }).click()
+  await page.waitForTimeout(400)
+  const names = await page.locator('.activity__title').allInnerTexts()
+  assert.ok(names.length > 0, 'no general-hoard entries found')
+})
+
+await check('an entry can be deleted from the ledger', async () => {
+  await page.getByRole('button', { name: 'Everything' }).click()
+  await page.waitForTimeout(300)
+  const before = await page.locator('.activity').count()
+  await page.locator('.activity__del').first().click()
+  await page.waitForTimeout(600)
+  assert.equal(await page.locator('.activity').count(), before - 1)
+})
+
 /* --------------------------------------------------- sandboxed embedding */
 await check('a sandboxed embed offers a copyable backup instead of a dead download', async () => {
   const frame = await browser.newPage({ viewport: { width: 420, height: 900 } })

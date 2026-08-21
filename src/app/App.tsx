@@ -7,6 +7,7 @@ import { LevelUpModal } from './LevelUpModal'
 import { useGameEffects, useMidnightRefresh, usePersistOnHide, useThemeEffect, type LevelUp } from './effects'
 import { Home } from '@/screens/Home'
 import { Vaults } from '@/screens/Vaults'
+import { Activity } from '@/screens/Activity'
 import { VaultDetail } from '@/screens/VaultDetail'
 import { Quests } from '@/screens/Quests'
 import { Progress } from '@/screens/Progress'
@@ -80,7 +81,7 @@ export function App() {
   return (
     <div className="app">
       <div className="app__scroll" key={route.name + (route.vaultId ?? '')} ref={scrollRef}>
-        {route.name !== 'vault' && (
+        {route.name !== 'vault' && route.name !== 'activity' && (
           <header className="topbar">
             <div className="grow">
               <h1 className="topbar__title">{meta.title}</h1>
@@ -103,6 +104,7 @@ export function App() {
           {route.name === 'quests' && <Quests />}
           {route.name === 'progress' && <Progress />}
           {route.name === 'profile' && <Profile />}
+          {route.name === 'activity' && <Activity navigate={navigate} />}
         </main>
       </div>
 

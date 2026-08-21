@@ -53,7 +53,8 @@ The game layer exists to make you keep feeding that number.
 | **Progress** | Cumulative area chart, monthly bars against target, a 26-week contribution heatmap, a vault-split donut, and personal records. |
 | **Themes** | Nine palettes, one unlocked per rank. |
 | **Feel** | Confetti, level-up modal, roll-up counters, haptics, and coin pings synthesised in WebAudio — no audio assets. |
-| **Your data** | Everything is local. JSON export/import, demo data, and a full erase. |
+| **Activity ledger** | The full history, grouped by month with a running net, filterable by direction and by vault — including the general hoard, whose entries would otherwise be a number you couldn't look inside. |
+| **Your data** | Everything is local. Backup as a file or as copyable text, restore from either, demo data, and a full erase. |
 
 ## Running it
 
@@ -74,7 +75,7 @@ End-to-end tests drive the built app in a real browser:
 
 ```bash
 npm run build && npx vite preview --port 4173 &
-npm run test:e2e     # 23 browser assertions
+npm run test:e2e     # 26 browser assertions
 npm run shots        # screenshots of every screen -> shots/
 ```
 
@@ -100,7 +101,7 @@ src/
   store/      useSyncExternalStore store, reducer, persistence, migrations
   ui/         design-system primitives
   charts/     hand-rolled SVG
-  screens/    Onboarding, Home, Vaults, Quests, Progress, Profile
+  screens/    Onboarding, Home, Vaults, Activity, Quests, Progress, Profile
   app/        shell, routing, effects
 ```
 
@@ -132,7 +133,7 @@ your balance. A corrupt blob costs you a field, never the app.
 | Suite | What it covers |
 |---|---|
 | **212 unit tests** (Vitest) | The XP and level curves, ISO-week edge cases (2021-01-01 is 2020-W53), freeze resolution, every pace band, quest determinism, badge predicates, money parsing, and the persistence sanitiser. |
-| **23 end-to-end assertions** (Playwright) | Onboarding, saving, pace, the what-if slider, persistence across reloads, quest claiming, theme unlocks, destructive flows, focus management, keyboard shortcuts, the sandboxed-embed backup path, and every screen rendering without a broken value. The same suite is run against the embedded build inside a simulated host, so the published page is tested as it is actually served. |
+| **26 end-to-end assertions** (Playwright) | Onboarding, saving, pace, the what-if slider, persistence across reloads, quest claiming, theme unlocks, the activity ledger and its filters, destructive flows, focus management, keyboard shortcuts, the sandboxed-embed backup path, and every screen rendering without a broken value. The same suite is run against the embedded build inside a simulated host, so the published page is tested as it is actually served. |
 
 ## Privacy
 

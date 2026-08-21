@@ -179,7 +179,12 @@ export function Home({ onSave, navigate }: Props) {
       {/* ---------------------------------------------------------- activity */}
       {d.recent.length > 0 && (
         <section className="rise" style={{ animationDelay: '160ms' }}>
-          <h2 className="section-title">Recent</h2>
+          <h2 className="section-title">
+            Recent
+            <button className="btn btn--bare tiny" onClick={() => navigate({ name: 'activity' })}>
+              See all activity
+            </button>
+          </h2>
           <ul className="card stack stack--sm">
             {d.recent.slice(0, 5).map((e) => {
               const v = e.vaultId ? d.vaultById.get(e.vaultId) : null

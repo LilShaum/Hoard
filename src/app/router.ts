@@ -5,6 +5,7 @@ export const TABS: Tab[] = ['home', 'vaults', 'quests', 'progress', 'profile']
 
 export type Route =
   | { name: Tab; vaultId?: undefined }
+  | { name: 'activity'; vaultId?: undefined }
   | { name: 'vault'; vaultId: string }
 
 /**
@@ -15,6 +16,7 @@ function parse(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean)
   const [head, id] = parts
   if (head === 'vaults' && id) return { name: 'vault', vaultId: decodeURIComponent(id) }
+  if (head === 'activity') return { name: 'activity' }
   if (TABS.includes(head as Tab)) return { name: head as Tab }
   return { name: 'home' }
 }
@@ -46,5 +48,7 @@ export function useRoute(): [Route, (r: Route, replace?: boolean) => void] {
 
 /** The tab that should look active — a vault detail still belongs to Vaults. */
 export function activeTab(route: Route): Tab {
-  return route.name === 'vault' ? 'vaults' : route.name
+  if (route.name === 'vault') return 'vaults'
+  if (route.name === 'activity') return 'home'
+  return route.name
 }
