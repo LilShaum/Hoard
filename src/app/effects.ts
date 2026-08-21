@@ -94,7 +94,7 @@ export function useGameEffects(d: Derived, onLevelUp: (info: LevelUp) => void): 
 /** Keeps the <html> theme attribute and reduced-motion flag in sync. */
 export function useThemeEffect(theme: string, reduceMotion: boolean): void {
   useEffect(() => {
-    document.documentElement.dataset.theme = theme
+    document.documentElement.dataset.hoardTheme = theme
     document.body.dataset.reduceMotion = String(reduceMotion)
     const meta = document.querySelector('meta[name="theme-color"]')
     const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()

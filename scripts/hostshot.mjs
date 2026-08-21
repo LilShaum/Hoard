@@ -1,0 +1,17 @@
+import { chromium } from 'playwright'
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
+const p = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: 'light' })
+await p.goto('http://127.0.0.1:4174/hosted.html', { waitUntil: 'networkidle' })
+// Straight to the demo account, no onboarding.
+await p.evaluate(() => localStorage.clear())
+await p.reload({ waitUntil: 'networkidle' })
+await p.getByRole('button', { name: 'See a demo instead' }).click()
+await p.waitForTimeout(3400)
+await p.goto('http://127.0.0.1:4174/hosted.html#/home', { waitUntil: 'networkidle' })
+await p.waitForTimeout(800)
+await p.screenshot({ path: 'shots/19-hosted-light-viewer.png' })
+const bg = await p.evaluate(() => getComputedStyle(document.body).backgroundColor)
+const font = await p.evaluate(() => getComputedStyle(document.querySelector('.hero__total')).fontFamily)
+console.log('body background:', bg)
+console.log('display font   :', font)
+await b.close()

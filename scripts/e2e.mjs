@@ -164,15 +164,15 @@ await check('claiming a quest removes it from the claimable pile', async () => {
 /* ----------------------------------------------------------------- themes */
 await check('an unlocked theme applies and survives a reload', async () => {
   await go('profile')
-  const before = await page.evaluate(() => document.documentElement.dataset.theme)
+  const before = await page.evaluate(() => document.documentElement.dataset.hoardTheme)
   const option = page.locator('.themeopt:not(.is-locked)').nth(1)
   if (await option.count()) {
     await option.click()
     await page.waitForTimeout(400)
-    const after = await page.evaluate(() => document.documentElement.dataset.theme)
+    const after = await page.evaluate(() => document.documentElement.dataset.hoardTheme)
     assert.notEqual(after, before)
     await page.reload({ waitUntil: 'networkidle' })
-    assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), after)
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.hoardTheme), after)
   }
 })
 
@@ -256,6 +256,37 @@ await check('the progress screen draws its charts on real data', async () => {
   assert.ok((await page.locator('.chart__svg').count()) >= 2, 'charts missing')
   assert.ok((await page.locator('.heat__cell').count()) > 100, 'heatmap missing')
   assert.ok((await page.locator('.ach').count()) > 20, 'achievements missing')
+})
+
+/* --------------------------------------------------- sandboxed embedding */
+await check('a sandboxed embed offers a copyable backup instead of a dead download', async () => {
+  const frame = await browser.newPage({ viewport: { width: 420, height: 900 } })
+  await frame.setContent(
+    `<style>html,body{margin:0;height:100%}iframe{border:0;width:100%;height:100%}</style>` +
+    `<iframe src="${BASE}#/profile"></iframe>`,
+    { waitUntil: 'networkidle' },
+  )
+  const inner = frame.frameLocator('iframe')
+  // Get past onboarding inside the frame.
+  const demo = inner.getByRole('button', { name: 'See a demo instead' })
+  if (await demo.count()) {
+    await demo.click()
+    await frame.waitForTimeout(2600)
+  }
+  const keep = inner.getByRole('button', { name: 'Keep going' })
+  if (await keep.count()) await keep.click().catch(() => {})
+  await frame.waitForTimeout(600)
+
+  // Navigate the framed app to Profile without reloading the outer page.
+  await inner.locator('.tabbar__btn').last().click()
+  await frame.waitForTimeout(600)
+
+  await inner.getByRole('button', { name: 'Copy backup' }).click()
+  await frame.waitForTimeout(600)
+  const text = await inner.getByLabel('Backup data').inputValue()
+  assert.match(text, /"version"/)
+  assert.ok(text.length > 200, 'backup looks empty')
+  await frame.close()
 })
 
 await browser.close()

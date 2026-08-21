@@ -21,14 +21,35 @@ export function Profile() {
 
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmDemo, setConfirmDemo] = useState(false)
+  const [backupText, setBackupText] = useState<string | null>(null)
+  const [restoreText, setRestoreText] = useState<string | null>(null)
   const { profile } = state
 
   const set = (patch: Partial<typeof profile>) => dispatch({ type: 'profile/update', patch })
 
-  const download = () => {
+  /**
+   * Embedded viewers (and any sandboxed frame) block page-initiated downloads
+   * silently — the click appears to work and no file ever arrives. So a
+   * download is only offered where it can actually happen; everywhere else the
+   * backup is handed over as text to copy, which works in every context.
+   */
+  const canDownload = (() => {
+    try {
+      if ('claude' in window) return false // an embedded viewer, not a page
+      return window.self === window.top
+    } catch {
+      return false // cross-origin frame: definitely sandboxed
+    }
+  })()
+
+  const backup = () => {
     flush()
-    const blob = new Blob([exportState(state)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
+    const json = exportState(state)
+    if (!canDownload) {
+      setBackupText(json)
+      return
+    }
+    const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
     const a = document.createElement('a')
     a.href = url
     a.download = `hoard-backup-${d.today}.json`
@@ -37,6 +58,28 @@ export function Profile() {
     a.remove()
     setTimeout(() => URL.revokeObjectURL(url), 2_000)
     toast('Backup downloaded', '💾')
+  }
+
+  const copyBackup = async () => {
+    const json = backupText ?? exportState(state)
+    try {
+      await navigator.clipboard.writeText(json)
+      toast('Backup copied to the clipboard', '📋')
+    } catch {
+      toast('Select the text and copy it', 'ℹ️')
+    }
+  }
+
+  const restoreFromText = (text: string) => {
+    const next = importState(text)
+    if (!next) {
+      toast("That doesn't look like a Hoard backup", '⚠️')
+      return
+    }
+    suppressNextCelebration()
+    dispatch({ type: 'state/replace', state: next })
+    setRestoreText(null)
+    toast(`Restored ${next.entries.length} entries`, '📥')
   }
 
   const onFile = async (file: File | undefined) => {
@@ -149,12 +192,25 @@ export function Profile() {
           Everything lives in this browser. Nothing is uploaded, there's no account, and
           no one — including us — can see it. That also means clearing your browser data
           clears your hoard, so take a backup now and then.
+          {!canDownload && ' Downloads are blocked in this view, so backups are handed over as text you can copy.'}
         </p>
 
         <div className="row row--tight row--wrap">
-          <button className="btn btn--ghost btn--sm" onClick={download}>Download backup</button>
-          <button className="btn btn--ghost btn--sm" onClick={() => fileRef.current?.click()}>
-            Restore from file
+          {canDownload && (
+            <button className="btn btn--ghost btn--sm" onClick={backup}>Download backup</button>
+          )}
+          {/* Always offered: if the environment detection above is ever wrong,
+              this is the path that still works. */}
+          <button className="btn btn--ghost btn--sm" onClick={() => setBackupText(exportState(state))}>
+            Copy backup
+          </button>
+          {canDownload && (
+            <button className="btn btn--ghost btn--sm" onClick={() => fileRef.current?.click()}>
+              Restore from file
+            </button>
+          )}
+          <button className="btn btn--ghost btn--sm" onClick={() => setRestoreText('')}>
+            Paste a backup
           </button>
           <input
             ref={fileRef}
@@ -187,6 +243,65 @@ export function Profile() {
         <strong>Hoard</strong> · built for a friend who asked for a money app that felt like a game.
         <br />No accounts, no ads, no bank connection — just you and the pile.
       </p>
+
+      <Sheet
+        open={backupText != null}
+        onClose={() => setBackupText(null)}
+        title="Your backup"
+        footer={
+          <>
+            <button className="btn btn--ghost grow" onClick={() => setBackupText(null)}>Done</button>
+            <button className="btn btn--primary grow" onClick={copyBackup}>Copy to clipboard</button>
+          </>
+        }
+      >
+        <div className="stack stack--sm">
+          <p className="small muted">
+            Copy this somewhere safe — a note, an email to yourself — and paste it back
+            in to restore. This works everywhere, including views where downloads are
+            blocked.
+          </p>
+          <textarea
+            className="textarea backup"
+            readOnly
+            value={backupText ?? ''}
+            aria-label="Backup data"
+            onFocus={(e) => e.currentTarget.select()}
+          />
+        </div>
+      </Sheet>
+
+      <Sheet
+        open={restoreText != null}
+        onClose={() => setRestoreText(null)}
+        title="Paste a backup"
+        footer={
+          <>
+            <button className="btn btn--ghost grow" onClick={() => setRestoreText(null)}>Cancel</button>
+            <button
+              className="btn btn--primary grow"
+              disabled={!restoreText?.trim()}
+              onClick={() => restoreFromText(restoreText ?? '')}
+            >
+              Restore
+            </button>
+          </>
+        }
+      >
+        <div className="stack stack--sm">
+          <p className="small muted">
+            Paste the backup text you saved earlier. This replaces everything currently
+            in the app.
+          </p>
+          <textarea
+            className="textarea backup"
+            value={restoreText ?? ''}
+            placeholder='{"version":1,…}'
+            aria-label="Backup data to restore"
+            onChange={(e) => setRestoreText(e.target.value)}
+          />
+        </div>
+      </Sheet>
 
       <Sheet
         open={confirmReset}

@@ -14,6 +14,10 @@ html, body, #root { height: 100%; }
 html {
   -webkit-text-size-adjust: 100%;
   scrollbar-color: var(--border-strong) transparent;
+  /* Painted as well as body: when embedded, an unpainted root shows the
+     host's ground through, and this app commits to its own. */
+  background: var(--bg);
+  color-scheme: dark;
 }
 
 body {
@@ -1101,4 +1105,13 @@ body[data-reduce-motion='true'] *::after {
   color: var(--text-faint);
   white-space: nowrap;
   overflow: visible;
+}
+
+/* Backup text — monospace so a truncated paste is obvious at a glance. */
+.backup {
+  min-height: 180px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.45;
+  word-break: break-all;
 }

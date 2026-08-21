@@ -49,14 +49,12 @@
   --shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.55);
   --shadow-lg: 0 24px 60px -18px rgba(0, 0, 0, 0.7);
   --ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
-}
 
-/* -------------------------------------------------------------------------
-   Themes. Each sets the surface ramp plus an accent pair used for gradients,
-   rings and glows. `--glow` is the accent at low alpha for ambient lighting.
-   ---------------------------------------------------------------------- */
-
-[data-theme='midnight'] {
+  /* ------------------------------------------------------- default palette
+     Midnight lives on bare :root as well as on its own attribute selector.
+     The theme attribute is written by JavaScript, so without this the very
+     first paint would have no palette at all and the page would borrow
+     whatever ground its host is painting. */
   --bg: #080b14;
   --bg-2: #0c1120;
   --surface: rgba(148, 170, 255, 0.055);
@@ -72,7 +70,36 @@
   --glow: rgba(107, 147, 255, 0.22);
 }
 
-[data-theme='emberlight'] {
+/* -------------------------------------------------------------------------
+   Themes. Each sets the surface ramp plus an accent pair used for gradients,
+   rings and glows. `--glow` is the accent at low alpha for ambient lighting.
+
+   The attribute is `data-hoard-theme`, not `data-theme`: when this app is
+   embedded, the host may stamp `data-theme="light|dark"` on the same root
+   element, and two systems writing one attribute is a fight nobody wins.
+
+   Hoard commits to a dark visual world on purpose — it is a game, and the
+   nine palettes are progression rewards rather than a light/dark preference.
+   Every surface is therefore painted explicitly and none is inherited.
+   ---------------------------------------------------------------------- */
+
+[data-hoard-theme='midnight'] {
+  --bg: #080b14;
+  --bg-2: #0c1120;
+  --surface: rgba(148, 170, 255, 0.055);
+  --surface-2: rgba(148, 170, 255, 0.095);
+  --border: rgba(148, 170, 255, 0.13);
+  --border-strong: rgba(148, 170, 255, 0.26);
+  --text: #eaefff;
+  --text-dim: #9aa6c4;
+  --text-faint: #7c88a8;
+  --accent: #6b93ff;
+  --accent-2: #8b5cf6;
+  --accent-ink: #05070f;
+  --glow: rgba(107, 147, 255, 0.22);
+}
+
+[data-hoard-theme='emberlight'] {
   --bg: #120d09;
   --bg-2: #1a1310;
   --surface: rgba(255, 190, 130, 0.06);
@@ -88,7 +115,7 @@
   --glow: rgba(255, 138, 61, 0.22);
 }
 
-[data-theme='deepsea'] {
+[data-hoard-theme='deepsea'] {
   --bg: #041018;
   --bg-2: #061a26;
   --surface: rgba(110, 230, 240, 0.055);
@@ -104,7 +131,7 @@
   --glow: rgba(34, 211, 238, 0.2);
 }
 
-[data-theme='verdant'] {
+[data-hoard-theme='verdant'] {
   --bg: #06120c;
   --bg-2: #0a1c13;
   --surface: rgba(134, 239, 172, 0.055);
@@ -120,7 +147,7 @@
   --glow: rgba(74, 222, 128, 0.2);
 }
 
-[data-theme='royal'] {
+[data-hoard-theme='royal'] {
   --bg: #0f0818;
   --bg-2: #170d25;
   --surface: rgba(216, 180, 254, 0.06);
@@ -136,7 +163,7 @@
   --glow: rgba(168, 85, 247, 0.24);
 }
 
-[data-theme='ice'] {
+[data-hoard-theme='ice'] {
   --bg: #070d16;
   --bg-2: #0c1523;
   --surface: rgba(186, 224, 255, 0.06);
@@ -152,7 +179,7 @@
   --glow: rgba(125, 211, 252, 0.22);
 }
 
-[data-theme='dragonfire'] {
+[data-hoard-theme='dragonfire'] {
   --bg: #120707;
   --bg-2: #1c0c0b;
   --surface: rgba(255, 160, 140, 0.06);
@@ -168,7 +195,7 @@
   --glow: rgba(255, 77, 77, 0.24);
 }
 
-[data-theme='aurum'] {
+[data-hoard-theme='aurum'] {
   --bg: #100e08;
   --bg-2: #191509;
   --surface: rgba(245, 209, 130, 0.06);
@@ -184,7 +211,7 @@
   --glow: rgba(245, 196, 81, 0.24);
 }
 
-[data-theme='void'] {
+[data-hoard-theme='void'] {
   --bg: #030308;
   --bg-2: #08070f;
   --surface: rgba(200, 190, 255, 0.055);

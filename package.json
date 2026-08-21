@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:e2e": "node scripts/e2e.mjs",
     "shots": "node scripts/shots.mjs",
-    "verify": "npm run typecheck && npm run test && npm run build"
+    "verify": "npm run typecheck && npm run test && npm run build",
+    "build:artifact": "npm run build:single && node scripts/artifact.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

@@ -4,6 +4,8 @@
 
 **A savings app that plays like a game.**
 
+[**▶ Open the live app**](https://claude.ai/code/artifact/945561bd-8708-4382-80ce-c8e16f8f7011)
+
 Set vaults, log what you put aside, and watch consistency turn into levels,
 streaks, quests and ranks. No bank connection, no account, no ads — the money
 stays in your own account, Hoard just makes keeping it there feel like winning.
@@ -61,13 +63,18 @@ npm run dev          # dev server
 npm run verify       # typecheck + unit tests + build
 npm run build        # normal production build  -> dist/
 npm run build:single # one self-contained .html -> dist-single/
+npm run build:artifact # the same page as a body fragment, for embedding
 ```
+
+The single-file build inlines everything — scripts, styles and both typefaces —
+into one HTML document with no external requests at all, so it works offline and
+behind any content-security policy.
 
 End-to-end tests drive the built app in a real browser:
 
 ```bash
 npm run build && npx vite preview --port 4173 &
-npm run test:e2e     # 22 browser assertions
+npm run test:e2e     # 23 browser assertions
 npm run shots        # screenshots of every screen -> shots/
 ```
 
@@ -109,6 +116,12 @@ backup and it lands at exactly the right level for free.
 is `100.4999…` in binary, so the obvious implementation quietly charges you a
 cent. Hoard splits the string instead. There's a test for it.
 
+**The theme attribute is namespaced.** Themes key off `data-hoard-theme`, not
+`data-theme`, because an embedding host may stamp its own light/dark preference
+on the same root element — and two systems writing one attribute is a fight
+nobody wins. The default palette also lives on bare `:root`, so the very first
+paint is already themed rather than borrowing whatever ground the host paints.
+
 **Storage is treated as hostile.** Everything read back from `localStorage` — or
 from a file you import — is checked, coerced or dropped field by field, and
 entries are deduplicated by id so importing the same backup twice can't double
@@ -119,7 +132,7 @@ your balance. A corrupt blob costs you a field, never the app.
 | Suite | What it covers |
 |---|---|
 | **212 unit tests** (Vitest) | The XP and level curves, ISO-week edge cases (2021-01-01 is 2020-W53), freeze resolution, every pace band, quest determinism, badge predicates, money parsing, and the persistence sanitiser. |
-| **22 end-to-end assertions** (Playwright) | Onboarding, saving, pace, the what-if slider, persistence across reloads, quest claiming, theme unlocks, destructive flows, focus management, keyboard shortcuts and every screen rendering without a broken value. |
+| **23 end-to-end assertions** (Playwright) | Onboarding, saving, pace, the what-if slider, persistence across reloads, quest claiming, theme unlocks, destructive flows, focus management, keyboard shortcuts, the sandboxed-embed backup path, and every screen rendering without a broken value. The same suite is run against the embedded build inside a simulated host, so the published page is tested as it is actually served. |
 
 ## Privacy
 

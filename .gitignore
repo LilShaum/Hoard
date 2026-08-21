@@ -1,6 +1,6 @@
-node_modules
-dist
-dist-single
 *.tsbuildinfo
 .DS_Store
+dist
+dist-single
+node_modules
 shots
