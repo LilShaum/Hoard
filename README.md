@@ -5,7 +5,7 @@
 **A savings app that plays like a game.**
 
 [**Open the live app**](https://claude.ai/code/artifact/945561bd-8708-4382-80ce-c8e16f8f7011)
-· [GitHub Pages](https://lilshaum.github.io/Test/)
+· [GitHub Pages](https://lilshaum.github.io/Hoard/)
 
 Set vaults, hold a weekly spending limit, and watch consistency turn into
 levels, streaks, badges and ranks. No bank connection, no account, no ads —

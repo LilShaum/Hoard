@@ -12,7 +12,7 @@ on:
   push:
     branches:
       - main
-      - claude/friends-app-project-gc3crq
+      - claude/hoard-gc3crq
   workflow_dispatch:
 
 permissions:
