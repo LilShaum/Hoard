@@ -4,11 +4,13 @@
 
 **A savings app that plays like a game.**
 
-[**▶ Open the live app**](https://claude.ai/code/artifact/945561bd-8708-4382-80ce-c8e16f8f7011)
+[**Open the live app**](https://claude.ai/code/artifact/945561bd-8708-4382-80ce-c8e16f8f7011)
+· [GitHub Pages](https://lilshaum.github.io/Test/)
 
-Set vaults, log what you put aside, and watch consistency turn into levels,
-streaks, quests and ranks. No bank connection, no account, no ads — the money
-stays in your own account, Hoard just makes keeping it there feel like winning.
+Set vaults, hold a weekly spending limit, and watch consistency turn into
+levels, streaks, badges and ranks. No bank connection, no account, no ads —
+the money stays in your own account; Hoard makes keeping it there feel like
+winning.
 
 </div>
 
@@ -21,6 +23,9 @@ A friend asked for it, roughly like this:
 > *"Can you make an app for me to save money"* · *"Saving money in my acc, general like just saying"*
 > *"Make it like a game"* · *"With goals I can set to work towards"*
 > *"have like monthly goals and like ways I can set maybe a Xmas goal"*
+
+…and later: a weekly spending limit, a monthly deposit goal, and a
+creature-collecting feel.
 
 So: a savings **tracker**, not a bank. Gamification as the core loop, not a
 badge bolted on the side. Multiple goals, a recurring monthly target, and
@@ -43,16 +48,17 @@ The game layer exists to make you keep feeding that number.
 
 | | |
 |---|---|
-| **Vaults** | Named goals with a target, an optional deadline, an emoji and a colour. Presets for Christmas 🎄, a trip ✈️, an emergency fund 🛟 and more. |
+| **Vaults** | Named goals with a target, an optional deadline, a drawn glyph and one of eight *types*. Presets for Christmas, a trip, an emergency fund and more. |
+| **Weekly spending limit** | The other half of saving. The headline is not "spent so far" but **safe to spend today** — what is left, divided by the days still to come. Plus an under-budget streak and a weekly spend chart. |
+| **Monthly deposit goal** | One number to aim at each month, with a pace marker showing where an even month would have put you. |
 | **Pace engine** | Required-per-week, an EWMA projection of your real finish date, six status bands, and a live what-if simulator. |
-| **Levels & ranks** | 60 levels across nine dragon ranks, Wyrmling → Elder Wyrm. XP is logarithmic in money, so the ladder can't be bought and a small saver still climbs. |
+| **Levels & ranks** | 60 levels across nine ranks, Novice → Grandkeeper, plus a five-stage companion that evolves on its own schedule. XP is logarithmic in money, so the ladder can't be bought and a small saver still climbs. |
 | **Streaks** | Weekly, not daily — money isn't Duolingo. The current week can never break a streak, and freezes are earned every four weeks to cover a bad one. |
 | **Quests** | Daily, weekly and monthly, generated deterministically so refreshing can't reroll them, with targets that scale to what *you* actually save. |
-| **Achievements** | ~30 badges in bronze/silver/gold tiers, including hidden ones that reveal on unlock. |
-| **Monthly target** | One number to aim at, with a pace marker showing where an even month would have put you. |
+| **Badges** | ~34 badges in bronze/silver/gold tiers, including hidden ones that reveal on unlock. Shape carries the kind of feat; the tier ring carries how hard it was. |
 | **Progress** | Cumulative area chart, monthly bars against target, a 26-week contribution heatmap, a vault-split donut, and personal records. |
-| **Themes** | Nine palettes, one unlocked per rank. |
-| **Feel** | Confetti, level-up modal, roll-up counters, haptics, and coin pings synthesised in WebAudio — no audio assets. |
+| **Appearance** | Light and dark, both designed rather than inverted, on their own axis from nine rank-unlocked accents. |
+| **Feel** | A level-up status window stating what actually changed, roll-up counters, haptics, and coin pings synthesised in WebAudio — no audio assets. |
 | **Activity ledger** | The full history, grouped by month with a running net, filterable by direction and by vault — including the general hoard, whose entries would otherwise be a number you couldn't look inside. |
 | **Your data** | Everything is local. Backup as a file or as copyable text, restore from either, demo data, and a full erase. |
 

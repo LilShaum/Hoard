@@ -79,12 +79,12 @@ export function makeVault(draft: VaultDraft, today = todayISO()): Vault {
 
 /** Starter vaults offered during onboarding and from the empty state. */
 export const VAULT_PRESETS: Array<VaultDraft & { blurb: string; monthsOut?: number; fixedDeadline?: string }> = [
-  { name: 'Christmas',      glyph: 'gift',  type: 'flare', target: 50_000,  deadline: null, blurb: 'Presents, food, the lot', fixedDeadline: '12-20' },
+  { name: 'Christmas',      glyph: 'gift',  type: 'bloom', target: 50_000,  deadline: null, blurb: 'Presents, food, the lot', fixedDeadline: '12-20' },
   { name: 'Emergency fund', glyph: 'wave',  type: 'frost', target: 100_000, deadline: null, blurb: 'The one that lets you sleep' },
   { name: 'Trip',           glyph: 'plane', type: 'wave',  target: 150_000, deadline: null, blurb: 'Somewhere warm',          monthsOut: 8 },
   { name: 'New phone',      glyph: 'phone', type: 'leaf',  target: 90_000,  deadline: null, blurb: 'Before this one dies',    monthsOut: 6 },
   { name: 'Car',            glyph: 'car',   type: 'volt',  target: 400_000, deadline: null, blurb: 'Four wheels of freedom',  monthsOut: 18 },
-  { name: 'Concert',        glyph: 'ticket', type: 'bloom', target: 25_000, deadline: null, blurb: 'Tickets and a night out', monthsOut: 4 },
+  { name: 'Concert',        glyph: 'ticket', type: 'ember', target: 25_000, deadline: null, blurb: 'Tickets and a night out', monthsOut: 4 },
 ]
 
 export const TYPE_KEYS: TypeKey[] = ['wave', 'ember', 'leaf', 'volt', 'bloom', 'moss', 'frost', 'flare']

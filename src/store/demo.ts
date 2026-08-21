@@ -28,7 +28,7 @@ export function demoState(): State {
   const start = addDays(weekStart(today), -7 * 25)
 
   const christmas = mk({
-    name: 'Christmas', glyph: 'gift', type: 'flare', target: 60_000,
+    name: 'Christmas', glyph: 'gift', type: 'bloom', target: 60_000,
     deadline: `${christmasYear}-12-20`, createdAt: addDays(start, 14),
     note: 'Presents, food, the lot', completedAt: null,
   })

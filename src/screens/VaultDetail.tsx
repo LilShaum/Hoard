@@ -63,7 +63,7 @@ export function VaultDetail({ vaultId, navigate, onLog }: Props) {
   }
 
   return (
-    <div className="stack stack--lg">
+    <div className="stack stack--lg" style={{ ['--vault-accent' as string]: tint }}>
       <div className="row row--between">
         <button className="btn btn--sm" onClick={() => navigate({ name: 'vaults' })}>
           <IconBack size={15} /> Vaults

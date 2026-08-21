@@ -65,15 +65,15 @@ export function VaultProjection({ vault, money }: { vault: VaultView; money: (c:
 
         {/* target line */}
         <line x1={PAD.left} y1={y(target)} x2={W - PAD.right} y2={y(target)}
-              stroke="var(--border-strong)" strokeWidth="1" strokeDasharray="3 4" />
-        <text x={PAD.left} y={y(target) - 5} className="chart__label">{money(target)}</text>
+              stroke="var(--rule-soft)" strokeWidth="1" strokeDasharray="3 4" />
+        <text x={PAD.left} y={y(target) - 5} className="chart__tick">{money(target)}</text>
 
         {/* deadline */}
         {deadlineX != null && (
           <>
             <line x1={deadlineX} y1={PAD.top - 4} x2={deadlineX} y2={H - PAD.bottom}
                   stroke={inTime ? 'var(--good)' : 'var(--bad)'} strokeWidth="1.5" strokeDasharray="2 3" opacity="0.8" />
-            <text x={Math.min(deadlineX, W - PAD.right - 34)} y={H - 6} className="chart__label">
+            <text x={Math.min(deadlineX, W - PAD.right - 34)} y={H - 6} className="chart__tick">
               {formatShort(vault.deadline!)}
             </text>
           </>
@@ -92,13 +92,26 @@ export function VaultProjection({ vault, money }: { vault: VaultView; money: (c:
         <circle cx={x(daysBetween(start, today))} cy={y(vault.saved)} r="4"
                 fill="var(--vault-accent, var(--accent))" stroke="var(--bg)" strokeWidth="2" />
 
-        <text x={PAD.left} y={H - 6} className="chart__label">{formatShort(start)}</text>
+        <text x={PAD.left} y={H - 6} className="chart__tick">{formatShort(start)}</text>
       </svg>
 
-      <figcaption className="chart__legend tiny faint">
-        <span><i className="dot dot--solid" /> saved so far</span>
-        <span><i className="dot dot--dash" /> on current pace</span>
-        {vault.deadline && <span><i className={`dot ${inTime ? 'dot--good' : 'dot--bad'}`} /> deadline</span>}
+      <figcaption>
+        <ul className="legend">
+          <li>
+            <span className="legend__mark" style={{ background: 'var(--vault-accent, var(--accent))' }} aria-hidden />
+            Saved so far
+          </li>
+          <li>
+            <span className="legend__mark legend__mark--dash" aria-hidden />
+            On current pace
+          </li>
+          {vault.deadline && (
+            <li>
+              <span className="legend__mark" style={{ background: inTime ? 'var(--good)' : 'var(--bad)' }} aria-hidden />
+              Deadline
+            </li>
+          )}
+        </ul>
       </figcaption>
     </figure>
   )

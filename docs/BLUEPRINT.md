@@ -364,3 +364,77 @@ the whole app is a link that works offline on a phone.
 - Keyboard-navigable; focus states everywhere; sheets trap focus and close on Esc.
 - Data survives reload, migrates across versions, and exports/imports losslessly.
 - The app is one shareable link, works offline, and stores nothing on a server.
+
+---
+
+# Addendum — v2: Field Guide
+
+The blueprint above is the original brief and still describes the engine. Two
+later requests changed the product on top of it.
+
+## What changed and why
+
+**Spending became a first-class movement.** The friend asked for a weekly
+spending limit. The temptation was to model a purchase as a negative deposit;
+that would have been wrong. Money spent from the current account never entered
+the hoard, so signing it against the hoard would make the savings total — the
+one number the whole app exists to show — a lie. `spend` is therefore a third
+entry kind that signs to zero against every balance, and exists only to be
+measured against the weekly limit. One `signed()` function is the single place
+that rule lives.
+
+The headline the feature ships is not *spent so far* but **safe to spend
+today**: what is left, divided by the days still to come, today included. That
+is the number that changes a decision at 6pm on a Thursday.
+
+**The interface was rebuilt.** The v1 design had every tell of a generated one —
+purple-to-blue gradients, pills everywhere, blurred shadows, Inter, and emoji
+doing work a label should do. v2 is a field guide crossed with a handheld RPG
+status screen.
+
+| v1 | v2 | Why |
+|---|---|---|
+| Purple→blue gradients | Flat fills, hard rules | A gradient was decorating; a border delimits. |
+| Pill-shaped everything | 2–5px radii, 1.5px borders | Hard geometry reads as an instrument, not a marketing page. |
+| Inter + Outfit | Archivo (width axis) + IBM Plex Mono | Inter is the default every generated interface reaches for. Archivo's width axis lets headers be expanded caps from the same family; every figure is monospaced so it reads as a readout. |
+| Emoji for vaults, ranks, badges | 20 drawn glyphs, 10 badge shapes, a 5-stage companion | Emoji are someone else's artwork, render differently on every platform, and cannot take the vault's type colour — which here is information. |
+| Confetti on level-up | A status window | Particles carried no information. The window states what changed: level, rank, form, unlock. |
+| Smooth progress bars | Notched bars | Ten notches are countable; a smooth fill is only glanceable. |
+| 9 whole palettes | 2 appearances × 9 accents | Nine palettes were nine different apps. Now surfaces never move and a theme only changes what the interface leans on. |
+
+## The type palette is validated, not chosen
+
+The eight vault **types** are the categorical palette, and colour here is
+identity rather than decoration. Every hue was run through the data-viz
+validator against these exact surfaces in both appearances — lightness band,
+chroma floor, colour-blind separation, normal-vision floor, contrast. The one
+candidate that could not clear the gates was replaced with a cyan that does,
+which incidentally removed the last purple from the app.
+
+Status colours (good / warning / critical) are reserved, never reused as a
+type, and never carry meaning without a word beside them — two of the three sit
+below 3:1 on the light plane by design. The default accent is navy specifically
+so it can never be mistaken for the status green sitting next to it in almost
+every chart.
+
+## Charts
+
+Rebuilt to the same method: thin marks, solid hairline baselines with dashes
+reserved for thresholds and forecasts, a legend wherever two mark types share a
+plot, selective direct labelling rather than a number on every point, hover
+tooltips that keyboard focus reproduces exactly, and a **table-view twin behind
+every chart** — a value reachable only by hovering is a value some readers
+cannot reach at all.
+
+## Theming, not licensing
+
+The friend suggested a Pokémon theme. What that means in practice — types,
+evolution, badges, a companion that grows — is a *structure*, and the structure
+is what got built. The artwork is all original: no Pokémon names, characters,
+sprites or trade dress appear anywhere in the app.
+
+## House style, enforced
+
+Three of these were explicit decisions, so they are unit-tested: the suite fails
+if an emoji, a CSS or SVG gradient, or a purple accent appears anywhere it could
+reach the screen.
