@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Hoard — a savings app that plays like a game.",
+  "description": "Hoard \u2014 a savings app that plays like a game.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -11,7 +11,10 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b --noEmit false --emitDeclarationOnly false || tsc -b"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:e2e": "node scripts/e2e.mjs",
+    "shots": "node scripts/shots.mjs",
+    "verify": "npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -21,6 +24,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "playwright": "^1.49.1",
     "typescript": "^5.7.2",
     "vite": "^6.0.7",
     "vite-plugin-singlefile": "^2.1.0",

@@ -1,0 +1,269 @@
+import { useRef, useState } from 'react'
+import { dispatch, flush, useHoard, useRawState } from '@/store/store'
+import { useFormat } from '@/app/format'
+import { Sheet } from '@/ui/Sheet'
+import { THEMES } from '@/app/themes'
+import { CURRENCIES } from '@/domain/money'
+import { exportState, importState } from '@/store/persist'
+import { initialState } from '@/store/defaults'
+import { demoState } from '@/store/demo'
+import { formatMedium } from '@/domain/dates'
+import { IconCheck, IconLock } from '@/ui/Icons'
+import { suppressNextCelebration } from '@/app/effects'
+import { toast } from '@/ui/toast'
+import { haptic, setSoundEnabled, soundDeposit } from '@/ui/feedback'
+
+export function Profile() {
+  const d = useHoard()
+  const state = useRawState()
+  const fmt = useFormat()
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const [confirmReset, setConfirmReset] = useState(false)
+  const [confirmDemo, setConfirmDemo] = useState(false)
+  const { profile } = state
+
+  const set = (patch: Partial<typeof profile>) => dispatch({ type: 'profile/update', patch })
+
+  const download = () => {
+    flush()
+    const blob = new Blob([exportState(state)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `hoard-backup-${d.today}.json`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 2_000)
+    toast('Backup downloaded', '💾')
+  }
+
+  const onFile = async (file: File | undefined) => {
+    if (!file) return
+    const text = await file.text()
+    const next = importState(text)
+    if (!next) {
+      toast("That file doesn't look like a Hoard backup", '⚠️')
+      return
+    }
+    suppressNextCelebration()
+    dispatch({ type: 'state/replace', state: next })
+    toast(`Restored ${next.entries.length} entries`, '📥')
+  }
+
+  const themeUnlocked = (level: number) => d.level.level >= level
+
+  return (
+    <div className="stack stack--lg">
+      <section className="card card--pad-lg stack stack--md">
+        <div className="field">
+          <label className="field__label" htmlFor="profile-name">What should we call you?</label>
+          <input
+            id="profile-name"
+            className="input"
+            value={profile.name}
+            maxLength={40}
+            placeholder="Your name"
+            onChange={(e) => set({ name: e.target.value })}
+          />
+        </div>
+
+        <div className="field">
+          <label className="field__label" htmlFor="profile-currency">Currency</label>
+          <select
+            id="profile-currency"
+            className="select"
+            value={profile.currency}
+            onChange={(e) => set({ currency: e.target.value })}
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>{c.code} — {c.label}</option>
+            ))}
+          </select>
+          <p className="tiny faint">
+            Amounts already logged aren't converted — this only changes how they're shown.
+          </p>
+        </div>
+      </section>
+
+      {/* -------------------------------------------------------------- themes */}
+      <section>
+        <h2 className="section-title">
+          Themes
+          <span className="faint">{profile.unlockedThemes.length} / {THEMES.length} unlocked</span>
+        </h2>
+        <ul className="themegrid">
+          {THEMES.map((t) => {
+            const unlocked = themeUnlocked(t.unlockLevel)
+            const active = profile.theme === t.key
+            return (
+              <li key={t.key}>
+                <button
+                  className={`themeopt ${active ? 'is-active' : ''} ${unlocked ? '' : 'is-locked'}`}
+                  disabled={!unlocked}
+                  aria-pressed={active}
+                  onClick={() => { set({ theme: t.key }); haptic(8) }}
+                >
+                  <span
+                    className="themeopt__swatch"
+                    style={{ background: `linear-gradient(135deg, ${t.swatch[0]}, ${t.swatch[1]})` }}
+                    aria-hidden
+                  />
+                  <span className="themeopt__name">{t.label}</span>
+                  {unlocked
+                    ? active && <span className="themeopt__tick"><IconCheck size={13} strokeWidth={3} /></span>
+                    : <span className="tiny faint"><IconLock size={11} className="inline-icon" /> Lv {t.unlockLevel}</span>}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+        <p className="tiny faint">Each rank unlocks the next theme. {d.nextRank && `${d.nextRank.name} is at level ${d.nextRank.minLevel}.`}</p>
+      </section>
+
+      {/* ------------------------------------------------------------ toggles */}
+      <section className="card stack stack--sm">
+        <Toggle
+          label="Sound effects"
+          hint="Coin pings and level-up fanfares, synthesised — nothing to download."
+          checked={profile.sound}
+          onChange={(on) => {
+            set({ sound: on })
+            setSoundEnabled(on)
+            if (on) soundDeposit()
+          }}
+        />
+        <Toggle
+          label="Reduce motion"
+          hint="Turns off confetti, roll-up counters and transitions."
+          checked={profile.reduceMotion}
+          onChange={(on) => set({ reduceMotion: on })}
+        />
+      </section>
+
+      {/* --------------------------------------------------------------- data */}
+      <section className="card stack stack--md">
+        <h2 className="section-title">Your data</h2>
+        <p className="small muted">
+          Everything lives in this browser. Nothing is uploaded, there's no account, and
+          no one — including us — can see it. That also means clearing your browser data
+          clears your hoard, so take a backup now and then.
+        </p>
+
+        <div className="row row--tight row--wrap">
+          <button className="btn btn--ghost btn--sm" onClick={download}>Download backup</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => fileRef.current?.click()}>
+            Restore from file
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            className="sr-only"
+            onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = '' }}
+          />
+        </div>
+
+        <div className="row row--tight row--wrap">
+          <button className="btn btn--ghost btn--sm" onClick={() => setConfirmDemo(true)}>
+            Load demo data
+          </button>
+          <button className="btn btn--danger btn--sm" onClick={() => setConfirmReset(true)}>
+            Erase everything
+          </button>
+        </div>
+
+        <dl className="datastats tiny faint">
+          <div><dt>Entries</dt><dd>{state.entries.length}</dd></div>
+          <div><dt>Vaults</dt><dd>{state.vaults.length}</dd></div>
+          <div><dt>Saving since</dt><dd>{formatMedium(profile.createdAt)}</dd></div>
+          <div><dt>Total XP</dt><dd>{d.xp.total.toLocaleString()}</dd></div>
+          <div><dt>In the hoard</dt><dd>{fmt.money(d.totalSaved)}</dd></div>
+        </dl>
+      </section>
+
+      <p className="tiny faint center about">
+        <strong>Hoard</strong> · built for a friend who asked for a money app that felt like a game.
+        <br />No accounts, no ads, no bank connection — just you and the pile.
+      </p>
+
+      <Sheet
+        open={confirmReset}
+        onClose={() => setConfirmReset(false)}
+        dialog
+        title="Erase everything?"
+        footer={
+          <>
+            <button className="btn btn--ghost grow" onClick={() => setConfirmReset(false)}>Cancel</button>
+            <button
+              className="btn btn--danger grow"
+              onClick={() => {
+                suppressNextCelebration()
+                dispatch({ type: 'state/replace', state: initialState() })
+                setConfirmReset(false)
+                toast('Everything cleared', '🧹')
+              }}
+            >
+              Erase
+            </button>
+          </>
+        }
+      >
+        <p className="small muted">
+          This deletes every vault, entry, level and badge on this device. If you might
+          want it back, download a backup first — this can't be undone.
+        </p>
+      </Sheet>
+
+      <Sheet
+        open={confirmDemo}
+        onClose={() => setConfirmDemo(false)}
+        dialog
+        title="Load demo data?"
+        footer={
+          <>
+            <button className="btn btn--ghost grow" onClick={() => setConfirmDemo(false)}>Cancel</button>
+            <button
+              className="btn btn--primary grow"
+              onClick={() => {
+                suppressNextCelebration()
+                dispatch({ type: 'state/replace', state: demoState() })
+                setConfirmDemo(false)
+                toast('Six months of demo saving loaded', '🎲')
+              }}
+            >
+              Load it
+            </button>
+          </>
+        }
+      >
+        <p className="small muted">
+          Replaces what's here with six months of realistic history — vaults mid-flight,
+          a finished one, a streak, a rough patch and a couple of withdrawals. Handy for
+          seeing what the app looks like once it's lived in.
+        </p>
+      </Sheet>
+    </div>
+  )
+}
+
+function Toggle({ label, hint, checked, onChange }: {
+  label: string; hint: string; checked: boolean; onChange: (v: boolean) => void
+}) {
+  return (
+    <label className="toggle">
+      <span className="grow">
+        <span className="toggle__label">{label}</span>
+        <span className="tiny faint">{hint}</span>
+      </span>
+      <input
+        type="checkbox"
+        className="sr-only toggle__input"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span className="toggle__track" aria-hidden><span className="toggle__thumb" /></span>
+    </label>
+  )
+}
