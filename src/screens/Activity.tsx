@@ -4,12 +4,12 @@ import { useFormat } from '@/app/format'
 import { ActivityRow } from '@/ui/parts'
 import { IconBack, IconTrash } from '@/ui/Icons'
 import { formatMonthLabel, monthKey } from '@/domain/dates'
-import { depositsOf, withdrawalsOf } from '@/domain/stats'
+import { depositsOf, signed, spendOf, withdrawalsOf } from '@/domain/stats'
 import { toast } from '@/ui/toast'
 import type { Entry } from '@/domain/types'
 import type { Route } from '@/app/router'
 
-type Filter = 'all' | 'in' | 'out'
+type Filter = 'all' | 'in' | 'out' | 'spend'
 
 /**
  * The full ledger. Without it, money logged straight to the general hoard is
@@ -24,8 +24,16 @@ export function Activity({ navigate }: { navigate: (r: Route) => void }) {
 
   const filtered = useMemo(() => {
     return d.entries
-      .filter((e) => (filter === 'all' ? true : filter === 'in' ? e.kind === 'deposit' : e.kind === 'withdrawal'))
-      .filter((e) => (source === 'all' ? true : source === 'general' ? e.vaultId == null : e.vaultId === source))
+      .filter((e) => (
+        filter === 'all' ? true
+        : filter === 'in' ? e.kind === 'deposit'
+        : filter === 'out' ? e.kind === 'withdrawal'
+        : e.kind === 'spend'))
+      .filter((e) => (
+        source === 'all' ? true
+        : source === 'spend' ? e.kind === 'spend'
+        : source === 'general' ? e.vaultId == null && e.kind !== 'spend'
+        : e.vaultId === source))
       .slice()
       .reverse()
   }, [d.entries, filter, source])
@@ -43,13 +51,14 @@ export function Activity({ navigate }: { navigate: (r: Route) => void }) {
 
   const remove = (id: string, amount: number) => {
     dispatch({ type: 'entry/delete', id })
-    toast(`${fmt.money(amount)} entry removed`, '↩️')
+    toast(`${fmt.money(amount)} entry removed`)
   }
 
   const sources: Array<{ key: string; label: string }> = [
     { key: 'all', label: 'Everything' },
-    { key: 'general', label: '🪙 General hoard' },
-    ...d.vaults.filter((v) => v.entryCount > 0).map((v) => ({ key: v.id, label: `${v.emoji} ${v.name}` })),
+    { key: 'general', label: 'General hoard' },
+    { key: 'spend', label: 'Spending' },
+    ...d.vaults.filter((v) => v.entryCount > 0).map((v) => ({ key: v.id, label: v.name })),
   ]
 
   return (
@@ -61,23 +70,23 @@ export function Activity({ navigate }: { navigate: (r: Route) => void }) {
         <span className="tiny faint">{filtered.length} of {d.entries.length}</span>
       </div>
 
-      <section className="card card--pad-lg">
-        <p className="tiny faint">All activity</p>
-        <p className="hero__total hero__total--sm money">{fmt.money(d.totalSaved)}</p>
-        <p className="small muted">
-          <span style={{ color: 'var(--good)' }}>+{fmt.money(depositsOf(filtered))} in</span>
-          {' · '}
-          <span style={{ color: 'var(--bad)' }}>−{fmt.money(withdrawalsOf(filtered))} out</span>
+      <section className="panel panel__body">
+        <span className="label">All activity</span>
+        <p className="num--hero hoard__total">{fmt.money(d.totalSaved)}</p>
+        <p className="tiny faint num">
+          +{fmt.money(depositsOf(filtered))} saved · −{fmt.money(withdrawalsOf(filtered))} withdrawn
+          · {fmt.money(spendOf(filtered))} spent
         </p>
       </section>
 
       <div className="stack stack--sm">
         <div className="row row--tight row--wrap">
-          {([['all', 'All'], ['in', 'Money in'], ['out', 'Money out']] as const).map(([key, label]) => (
-            <button key={key} className="chip" aria-pressed={filter === key} onClick={() => setFilter(key)}>
-              {label}
-            </button>
-          ))}
+          {([['all', 'All'], ['in', 'Saved'], ['out', 'Withdrawn'], ['spend', 'Spent']] as const)
+            .map(([key, label]) => (
+              <button key={key} className="chip" aria-pressed={filter === key} onClick={() => setFilter(key)}>
+                {label}
+              </button>
+            ))}
         </div>
         <div className="row row--tight row--wrap">
           {sources.map((s) => (
@@ -89,33 +98,33 @@ export function Activity({ navigate }: { navigate: (r: Route) => void }) {
       </div>
 
       {months.length === 0 ? (
-        <div className="card empty">
-          <span className="empty__icon" aria-hidden>🔍</span>
+        <div className="panel empty">
           <p className="empty__title">Nothing here</p>
           <p className="small">No entries match those filters.</p>
         </div>
       ) : (
         months.map(([key, list]) => {
-          const net = list.reduce((n, e) => n + (e.kind === 'deposit' ? e.amount : -e.amount), 0)
+          const net = list.reduce((n, e) => n + signed(e), 0)
           return (
-            <section key={key}>
-              <h2 className="section-title">
-                {formatMonthLabel(key)}
-                <span className="money faint">{fmt.money(net, { signed: true })}</span>
-              </h2>
-              <ul className="card stack stack--sm">
+            <section key={key} className="section">
+              <div className="section__head">
+                <span className="label">{formatMonthLabel(key)}</span>
+                <span className="num tiny faint">{fmt.money(net, { signed: true })}</span>
+              </div>
+              <ul className="panel activity-list">
                 {list.map((e) => {
                   const v = e.vaultId ? d.vaultById.get(e.vaultId) : null
                   return (
                     <ActivityRow
                       key={e.id}
                       entry={e}
-                      vaultName={v?.name ?? 'General hoard'}
-                      vaultEmoji={v?.emoji ?? '🪙'}
+                      vaultName={v?.name ?? (e.kind === 'spend' ? 'Spending' : 'General hoard')}
+                      glyph={v?.glyph ?? (e.kind === 'spend' ? 'bag' : 'coin')}
+                      type={v?.type ?? null}
                       money={fmt.money}
                       action={
                         <button
-                          className="btn btn--bare btn--icon activity__del"
+                          className="btn btn--icon activity__del"
                           aria-label={`Delete this ${fmt.money(e.amount)} entry`}
                           onClick={() => remove(e.id, e.amount)}
                         >

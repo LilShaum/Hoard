@@ -1,18 +1,19 @@
 import { useMemo } from 'react'
-import { useHoard, useRawState, dispatch } from '@/store/store'
+import { dispatch, useHoard, useRawState } from '@/store/store'
 import { useFormat } from '@/app/format'
 import { useCountUp } from '@/ui/useCountUp'
-import { Ring } from '@/ui/Ring'
-import { Bar } from '@/ui/Bar'
-import { VaultCard, QuestRow, ActivityRow } from '@/ui/parts'
-import { IconFlame, IconPlus, IconSnow, IconSpark, IconTrash } from '@/ui/Icons'
-import { todayISO } from '@/domain/dates'
+import { Creature, stageForLevel, stageName } from '@/ui/Creature'
+import { Notch, Meter, Status, VaultCard, QuestRow, ActivityRow } from '@/ui/parts'
+import { IconPlus } from '@/ui/Icons'
+import { WeekSpark } from '@/charts/Charts'
+import { BUDGET_LABEL } from '@/domain/budget'
+import { formatWeekday, todayISO } from '@/domain/dates'
 import { toast } from '@/ui/toast'
 import { haptic, soundClaim } from '@/ui/feedback'
 import type { Route } from '@/app/router'
 
 type Props = {
-  onSave: (vaultId?: string | null) => void
+  onLog: (vaultId?: string | null) => void
   navigate: (r: Route) => void
 }
 
@@ -22,124 +23,179 @@ function greeting(name: string): string {
   return name ? `${part}, ${name}` : part
 }
 
-export function Home({ onSave, navigate }: Props) {
+export function Home({ onLog, navigate }: Props) {
   const d = useHoard()
   const name = useRawState().profile.name
   const fmt = useFormat()
   const total = useCountUp(d.totalSaved)
-  const monthSaved = useCountUp(d.month.saved)
+  const stage = stageForLevel(d.level.level)
 
-  const claimable = d.quests.filter((q) => q.claimable)
-  const shownQuests = useMemo(() => {
-    const priority = [...d.quests].sort((a, b) => {
-      if (a.claimable !== b.claimable) return a.claimable ? -1 : 1
-      if (a.claimed !== b.claimed) return a.claimed ? 1 : -1
-      return b.fraction - a.fraction
-    })
-    return priority.slice(0, 2)
-  }, [d.quests])
+  const shownQuests = useMemo(
+    () => [...d.quests]
+      .sort((a, b) => {
+        if (a.claimable !== b.claimable) return a.claimable ? -1 : 1
+        if (a.claimed !== b.claimed) return a.claimed ? 1 : -1
+        return b.fraction - a.fraction
+      })
+      .slice(0, 2),
+    [d.quests],
+  )
 
   const claim = (id: string, xp: number) => {
     dispatch({ type: 'quest/claim', id, date: todayISO() })
     soundClaim()
     haptic([8, 24, 8])
-    toast('Quest claimed', '📜', xp)
+    toast('Quest claimed', xp)
   }
 
   const rail = d.activeVaults.length > 0 ? d.activeVaults : d.completedVaults
+  const budgetTone = d.budget.status === 'over' ? 'bad' : d.budget.status === 'close' ? 'warn' : 'good'
 
   return (
     <div className="stack stack--lg">
-      {/* ------------------------------------------------------------- crest */}
-      <section className="crest rise">
-        <Ring value={d.level.progress} size={72} stroke={7}
-              label={`Level ${d.level.level}, ${Math.round(d.level.progress * 100)}% to next`}>
-          <span className="crest__level">{d.level.level}</span>
-          <span className="crest__lvl-label">LVL</span>
-        </Ring>
-
+      {/* ---------------------------------------------------------- companion */}
+      <section className="panel companion">
+        <div className="companion__art" style={{ color: 'var(--accent)' }}>
+          <Creature stage={stage} size={62} title={`${stageName(stage)}, your companion`} />
+        </div>
         <div className="grow">
-          <p className="tiny faint">Rank</p>
-          <h1 className="crest__rank">
-            <span aria-hidden>{d.rank.sigil}</span> {d.rank.name}
-          </h1>
-          <p className="tiny muted">
-            {d.level.isMax
-              ? 'Maximum rank — the hoard is legend'
-              : <>{d.level.xpToNext.toLocaleString()} XP to level {d.level.level + 1}</>}
+          <p className="label">{greeting(name)}</p>
+          <h2 className="companion__rank">{d.rank.name}</h2>
+          <p className="tiny faint">
+            <span className="num">Lv {d.level.level}</span> · {stageName(stage)}
+            {!d.level.isMax && (
+              <> · <span className="num">{d.level.xpToNext.toLocaleString()}</span> XP to go</>
+            )}
           </p>
         </div>
-
-        <div className="crest__streak" title={`${d.streak.current} week streak`}>
-          <span className={`crest__flame ${d.streak.current > 0 ? 'is-lit' : ''}`}>
-            <IconFlame size={20} />
-          </span>
-          <span className="crest__streak-num">{d.streak.current}</span>
-          <span className="tiny faint">{d.streak.current === 1 ? 'week' : 'weeks'}</span>
+        <div className="companion__streak">
+          <span className="num companion__streak-num">{d.streak.current}</span>
+          <span className="label">{d.streak.current === 1 ? 'week' : 'weeks'}</span>
           {d.streak.freezes > 0 && (
-            <span className="crest__freeze" title={`${d.streak.freezes} streak freeze banked`}>
-              <IconSnow size={11} />{d.streak.freezes}
+            <span className="tiny faint num" title="Streak freezes banked">
+              {d.streak.freezes} held
             </span>
           )}
         </div>
       </section>
 
-      {/* -------------------------------------------------------------- hero */}
-      <section className="hero card card--pad-lg rise" style={{ animationDelay: '40ms' }}>
-        <p className="tiny faint">{greeting(name)}</p>
-        <p className="hero__total money">{fmt.money(total)}</p>
-        <p className="small muted">
-          in the hoard
-          {d.totalWithdrawn > 0 && <> · {fmt.money(d.totalDeposited)} saved all time</>}
-        </p>
+      {/* -------------------------------------------------------------- hoard */}
+      <section className="panel">
+        <header className="panel__head">
+          <span className="label">The hoard</span>
+          <span className="tiny faint num">{fmt.money(d.totalDeposited)} all time</span>
+        </header>
 
-        <div className="hero__month">
-          <div className="row row--between">
-            <span className="tiny faint">{d.month.label}</span>
-            <span className="tiny">
-              {d.month.target > 0
-                ? <><span className="money">{fmt.money(monthSaved)}</span> <span className="faint">/ {fmt.money(d.month.target)}</span></>
-                : <span className="money">{fmt.money(monthSaved)}</span>}
-            </span>
+        <div className="panel__body stack stack--md">
+          <p className="num--hero hoard__total">{fmt.money(total)}</p>
+
+          <div className="stack stack--sm">
+            <div className="row row--between">
+              <span className="label">{d.month.label} deposit goal</span>
+              <span className="tiny num">
+                {d.month.target > 0
+                  ? <>{fmt.money(d.month.saved)} <span className="faint">/ {fmt.money(d.month.target)}</span></>
+                  : fmt.money(d.month.saved)}
+              </span>
+            </div>
+
+            {d.month.target > 0 ? (
+              <>
+                <Notch
+                  value={d.month.fraction}
+                  marker={d.month.expectedFraction}
+                  color={d.month.hit ? 'var(--good)' : undefined}
+                  tall
+                  label="Monthly deposit goal"
+                />
+                <p className="tiny faint">
+                  {d.month.hit
+                    ? 'Goal met — everything from here is a bonus.'
+                    : d.month.onPace
+                      ? `Ahead of an even pace. ${fmt.money(d.month.remaining)} left, ${d.month.daysLeft} days to go.`
+                      : `Behind an even pace. ${fmt.money(d.month.remaining)} left in ${d.month.daysLeft} days.`}
+                </p>
+              </>
+            ) : (
+              <button className="btn btn--sm" onClick={() => navigate({ name: 'quests' })}>
+                Set a monthly deposit goal
+              </button>
+            )}
           </div>
-          {d.month.target > 0 ? (
-            <>
-              <Bar
-                value={d.month.fraction}
-                marker={d.month.expectedFraction}
-                tall
-                tone={d.month.hit ? 'good' : 'accent'}
-                label="Monthly target progress"
-              />
-              <p className="tiny faint">
-                {d.month.hit
-                  ? '🎉 Monthly target smashed'
-                  : d.month.onPace
-                    ? `On pace · ${fmt.money(d.month.remaining)} left, ${d.month.daysLeft} days to go`
-                    : `Behind pace · ${fmt.money(d.month.remaining)} left in ${d.month.daysLeft} days`}
-              </p>
-            </>
-          ) : (
-            <button className="btn btn--ghost btn--sm" onClick={() => navigate({ name: 'quests' })}>
-              Set a monthly target
-            </button>
-          )}
-        </div>
 
-        <button className="btn btn--primary btn--block hero__cta" onClick={() => onSave(null)}>
-          <IconPlus size={20} /> Save something
-        </button>
+          <button className="btn btn--primary btn--block" onClick={() => onLog(null)}>
+            <IconPlus size={17} /> Log something
+          </button>
+        </div>
+      </section>
+
+      {/* --------------------------------------------------------- this week */}
+      <section className="panel">
+        <header className="panel__head">
+          <span className="label">This week</span>
+          {d.budget.limit > 0 && (
+            <Status tone={budgetTone}>{BUDGET_LABEL[d.budget.status]}</Status>
+          )}
+        </header>
+
+        {d.budget.limit > 0 ? (
+          <>
+            <div className="panel__body stack stack--md">
+              <div className="safe">
+                <span className="label">Safe to spend today</span>
+                <p className="num safe__figure">{fmt.money(d.budget.safePerDay)}</p>
+                <p className="tiny faint">
+                  <span className="num">{fmt.money(d.budget.remaining)}</span> left over{' '}
+                  {d.budget.daysLeft} {d.budget.daysLeft === 1 ? 'day' : 'days'}
+                </p>
+              </div>
+
+              <div className="stack stack--sm">
+                <div className="row row--between">
+                  <span className="tiny faint num">{fmt.money(d.budget.spent)} spent</span>
+                  <span className="tiny faint num">limit {fmt.money(d.budget.limit)}</span>
+                </div>
+                <Meter
+                  value={d.budget.fraction}
+                  color={d.budget.status === 'over' ? 'var(--bad)'
+                       : d.budget.status === 'close' ? 'var(--warn)' : 'var(--good)'}
+                  label="Weekly spending against the limit"
+                />
+              </div>
+
+              <WeekSpark perDay={d.budget.perDay} limit={d.budget.limit} money={fmt.money} />
+            </div>
+
+            {d.budget.streak > 0 && (
+              <footer className="panel__foot tiny faint">
+                <span className="num">{d.budget.streak}</span>{' '}
+                {d.budget.streak === 1 ? 'week' : 'weeks'} running under the limit
+              </footer>
+            )}
+          </>
+        ) : (
+          <div className="panel__body stack stack--sm">
+            <p className="small muted">
+              A weekly spending limit is the other half of saving: most months miss the
+              deposit goal because of what left the current account, not what failed to
+              arrive.
+            </p>
+            <button className="btn btn--sm" onClick={() => navigate({ name: 'quests' })}>
+              Set a weekly spending limit
+            </button>
+          </div>
+        )}
       </section>
 
       {/* ------------------------------------------------------------ quests */}
       {shownQuests.length > 0 && (
-        <section className="rise" style={{ animationDelay: '80ms' }}>
-          <h2 className="section-title">
-            Quests
-            <button className="btn btn--bare tiny" onClick={() => navigate({ name: 'quests' })}>
-              {claimable.length > 0 ? `${claimable.length} to claim` : 'See all'}
+        <section className="section">
+          <div className="section__head">
+            <span className="label">Quests</span>
+            <button className="btn btn--link" onClick={() => navigate({ name: 'quests' })}>
+              All quests
             </button>
-          </h2>
+          </div>
           <ul className="stack stack--sm">
             {shownQuests.map((q) => (
               <QuestRow key={q.id} quest={q} money={fmt.money} onClaim={() => claim(q.id, q.xp)} />
@@ -149,25 +205,27 @@ export function Home({ onSave, navigate }: Props) {
       )}
 
       {/* ------------------------------------------------------------ vaults */}
-      <section className="rise" style={{ animationDelay: '120ms' }}>
-        <h2 className="section-title">
-          Vaults
-          <button className="btn btn--bare tiny" onClick={() => navigate({ name: 'vaults' })}>
-            {rail.length > 0 ? 'See all' : 'Create one'}
+      <section className="section">
+        <div className="section__head">
+          <span className="label">Vaults</span>
+          <button className="btn btn--link" onClick={() => navigate({ name: 'vaults' })}>
+            {rail.length > 0 ? 'All vaults' : 'Create one'}
           </button>
-        </h2>
+        </div>
 
         {rail.length === 0 ? (
-          <div className="card empty">
-            <span className="empty__icon" aria-hidden>🗝️</span>
+          <div className="panel empty">
             <p className="empty__title">No vaults yet</p>
-            <p className="small">A vault is a thing you're saving for — Christmas, a trip, a rainy day.</p>
+            <p className="small">
+              A vault is one thing you are saving for. Give it a target and a date and
+              Hoard will tell you honestly whether you are on track.
+            </p>
             <button className="btn btn--primary btn--sm" onClick={() => navigate({ name: 'vaults' })}>
-              Make your first vault
+              Open your first vault
             </button>
           </div>
         ) : (
-          <div className="stack stack--md">
+          <div className="stack stack--sm">
             {rail.slice(0, 3).map((v) => (
               <VaultCard key={v.id} vault={v} money={fmt.money}
                          onOpen={() => navigate({ name: 'vault', vaultId: v.id })} />
@@ -178,35 +236,24 @@ export function Home({ onSave, navigate }: Props) {
 
       {/* ---------------------------------------------------------- activity */}
       {d.recent.length > 0 && (
-        <section className="rise" style={{ animationDelay: '160ms' }}>
-          <h2 className="section-title">
-            Recent
-            <button className="btn btn--bare tiny" onClick={() => navigate({ name: 'activity' })}>
-              See all activity
+        <section className="section">
+          <div className="section__head">
+            <span className="label">Recent</span>
+            <button className="btn btn--link" onClick={() => navigate({ name: 'activity' })}>
+              Full ledger
             </button>
-          </h2>
-          <ul className="card stack stack--sm">
+          </div>
+          <ul className="panel activity-list">
             {d.recent.slice(0, 5).map((e) => {
               const v = e.vaultId ? d.vaultById.get(e.vaultId) : null
               return (
                 <ActivityRow
                   key={e.id}
                   entry={e}
-                  vaultName={v?.name ?? 'General hoard'}
-                  vaultEmoji={v?.emoji ?? '🪙'}
+                  vaultName={v?.name ?? (e.kind === 'spend' ? 'Spending' : 'General hoard')}
+                  glyph={v?.glyph ?? (e.kind === 'spend' ? 'bag' : 'coin')}
+                  type={v?.type ?? null}
                   money={fmt.money}
-                  action={
-                    <button
-                      className="btn btn--bare btn--icon activity__del"
-                      aria-label={`Delete this ${fmt.money(e.amount)} entry`}
-                      onClick={() => {
-                        dispatch({ type: 'entry/delete', id: e.id })
-                        toast('Entry removed', '↩️')
-                      }}
-                    >
-                      <IconTrash size={15} />
-                    </button>
-                  }
                 />
               )
             })}
@@ -215,12 +262,11 @@ export function Home({ onSave, navigate }: Props) {
       )}
 
       {!d.hasData && (
-        <section className="card empty rise" style={{ animationDelay: '200ms' }}>
-          <span className="empty__icon" aria-hidden><IconSpark size={38} /></span>
+        <section className="panel empty">
           <p className="empty__title">Your hoard starts at zero</p>
           <p className="small">
-            Put something aside — even a fiver — and log it here. XP, streaks and ranks
-            do the rest.
+            Put something aside — even a fiver — and log it. Levels, streaks and ranks
+            do the rest. {formatWeekday(d.today)} is as good a day as any.
           </p>
         </section>
       )}

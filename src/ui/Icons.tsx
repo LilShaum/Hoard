@@ -82,35 +82,10 @@ export const IconTrash = ({ size = 18, strokeWidth = 1.8, className }: Props) =>
   </svg>
 )
 
-export const IconFlame = ({ size = 18, className }: Props) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden className={className}>
-    <path d="M12.8 2.2c.4 3 .3 4.4-1.4 6.2-1.4 1.5-2 2.6-2 4a3.5 3.5 0 0 0 1.4 2.8c-.2-1.7.5-3 1.8-4 0 1.5.5 2.3 1.7 3.4 1.1 1 1.6 2 1.6 3.2 0 2.3-2 4.2-4.6 4.2-3.1 0-5.6-2.4-5.6-5.7 0-2 .7-3.6 2.4-5.7C10.2 7.2 12 5.3 12.8 2.2z" />
-  </svg>
-)
-
-export const IconSnow = ({ size = 16, strokeWidth = 1.6, className }: Props) => (
-  <svg {...base(size, strokeWidth)} className={className}>
-    <path d="M12 2v20M3.5 7l17 10M20.5 7l-17 10" />
-  </svg>
-)
-
-export const IconSpark = ({ size = 18, className }: Props) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden className={className}>
-    <path d="M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9z" />
-    <path d="M18.5 15l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9z" opacity=".65" />
-  </svg>
-)
-
 export const IconLock = ({ size = 16, strokeWidth = 1.8, className }: Props) => (
   <svg {...base(size, strokeWidth)} className={className}>
     <rect x="4.5" y="10" width="15" height="10.5" rx="2.2" />
     <path d="M8 10V7.5a4 4 0 0 1 8 0V10" />
-  </svg>
-)
-
-export const IconTarget = ({ size = 18, strokeWidth = 1.8, className }: Props) => (
-  <svg {...base(size, strokeWidth)} className={className}>
-    <circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1" />
   </svg>
 )
 

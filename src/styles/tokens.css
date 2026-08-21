@@ -1,228 +1,134 @@
 /* =============================================================================
    Hoard — design tokens
 
-   Every colour in the app resolves through a variable defined here, which is
-   what makes nine unlockable themes a one-attribute swap rather than nine
-   stylesheets. Vault accent hues are deliberately theme-independent: a vault
-   you coloured teal stays teal whatever rank you reach.
+   Two independent axes:
 
-   The app commits to a dark aesthetic on purpose — it's a game — so every
-   surface is painted explicitly and nothing is inherited from the host page.
+     data-hoard-appearance   light | dark      (a real user setting)
+     data-hoard-accent       one of nine       (unlocked by rank)
+
+   Keeping them separate is what stops nine themes turning into nine different
+   apps: the plane, panels, ink and rules never move, and a theme only ever
+   changes which type colour the interface leans on.
+
+   The eight TYPE colours are not decoration — they are the categorical palette
+   that identifies a vault, and they were validated with the data-viz
+   validator against these exact surfaces in both appearances (lightness band,
+   chroma floor, colour-blind separation, normal-vision floor, contrast). Do not
+   nudge a hex here without re-running it.
    ========================================================================== */
 
 :root {
   /* ------------------------------------------------------------- typography */
-  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-  --font-display: 'Outfit', var(--font-ui);
-  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+  --font-ui: 'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-num: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Archivo carries a width axis; headers use it, body copy does not. */
+  --wide: 112;
+  --normal: 100;
 
   /* ----------------------------------------------------------------- space */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
   --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px;
 
-  --r-sm: 8px; --r-md: 12px; --r-lg: 18px; --r-xl: 24px; --r-full: 999px;
+  /* Hard geometry. Nothing in this interface is a pill. */
+  --r-1: 2px;
+  --r-2: 3px;
+  --r-3: 5px;
+  --bw: 1.5px;
 
   /* ---------------------------------------------------------------- motion */
-  --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --dur-fast: 140ms;
-  --dur: 260ms;
-  --dur-slow: 620ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast: 110ms;
+  --dur: 190ms;
 
-  /* --------------------------------------------------- vault accent palette */
-  --a-gold:   #f4c14b;
-  --a-ember:  #ff8a3d;
-  --a-rose:   #f472b6;
-  --a-violet: #a78bfa;
-  --a-azure:  #60a5fa;
-  --a-teal:   #2dd4bf;
-  --a-lime:   #a3e635;
-  --a-slate:  #94a3b8;
+  /* ---------------------------------------------------- surfaces & ink (light) */
+  --plane: #e6eae3;
+  --panel: #ffffff;
+  --sunken: #f1f4ef;
+  --ink: #131a17;
+  --ink-2: #59635b;
+  --ink-3: #838d86;
+  --rule: #131a17;
+  --rule-soft: rgba(19, 26, 23, 0.14);
+  --track: #dfe4dc;
+  --overlay: rgba(19, 26, 23, 0.42);
 
-  /* ------------------------------------------------------------- semantics */
-  --good: #34d399;
-  --warn: #fbbf24;
-  --bad:  #fb7185;
+  /* ----------------------------------------------------------- type palette */
+  --t-wave:  #2a78d6;
+  --t-ember: #eb6834;
+  --t-leaf:  #1baf7a;
+  --t-volt:  #eda100;
+  --t-bloom: #e87ba4;
+  --t-moss:  #008300;
+  --t-frost: #0099b0;
+  --t-flare: #e34948;
 
-  /* ------------------------------------------------------- shadow & shape */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.55);
-  --shadow-lg: 0 24px 60px -18px rgba(0, 0, 0, 0.7);
-  --ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+  /* Ink to place *on* a filled type chip, chosen per hue for contrast. */
+  --on-wave: #ffffff;  --on-ember: #1a0d05; --on-leaf: #04170f;  --on-volt: #1c1400;
+  --on-bloom: #26101a; --on-moss: #ffffff;  --on-frost: #04161a; --on-flare: #ffffff;
 
-  /* ------------------------------------------------------- default palette
-     Midnight lives on bare :root as well as on its own attribute selector.
-     The theme attribute is written by JavaScript, so without this the very
-     first paint would have no palette at all and the page would borrow
-     whatever ground its host is painting. */
-  --bg: #080b14;
-  --bg-2: #0c1120;
-  --surface: rgba(148, 170, 255, 0.055);
-  --surface-2: rgba(148, 170, 255, 0.095);
-  --border: rgba(148, 170, 255, 0.13);
-  --border-strong: rgba(148, 170, 255, 0.26);
-  --text: #eaefff;
-  --text-dim: #9aa6c4;
-  --text-faint: #7c88a8;
-  --accent: #6b93ff;
-  --accent-2: #8b5cf6;
-  --accent-ink: #05070f;
-  --glow: rgba(107, 147, 255, 0.22);
+  /* --------------------------------------------------------------- status
+     Reserved. A status colour never doubles as a series colour, and never
+     carries meaning without an icon and a word beside it — two of these sit
+     below 3:1 on the light plane by design. */
+  --good: #0ca30c;
+  --warn: #fab219;
+  --bad:  #d03b3b;
+  --good-ink: #046004;
+  --warn-ink: #7a5300;
+  --bad-ink:  #a01f1f;
+
+  /* Default accent: a deep ink-navy. Deliberately not green — the reserved
+     status green sits beside it in almost every chart, and two greens a shade
+     apart is the fastest way to make a legend meaningless. */
+  --accent: #234a6e;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(35, 74, 110, 0.12);
+}
+
+[data-hoard-appearance='dark'] {
+  --plane: #0e1116;
+  --panel: #171b21;
+  --sunken: #1e242c;
+  --ink: #e7ece8;
+  --ink-2: #9daaa2;
+  --ink-3: #6d7a72;
+  --rule: rgba(231, 236, 232, 0.26);
+  --rule-soft: rgba(231, 236, 232, 0.13);
+  --track: #262d36;
+  --overlay: rgba(5, 7, 10, 0.62);
+
+  /* The same eight hues, stepped for the dark panel — not an automatic flip. */
+  --t-wave:  #3987e5;
+  --t-ember: #d95926;
+  --t-leaf:  #199e70;
+  --t-volt:  #c98500;
+  --t-bloom: #d55181;
+  --t-moss:  #008300;
+  --t-frost: #22a6bd;
+  --t-flare: #e66767;
+
+  --on-wave: #04101f;  --on-ember: #ffffff; --on-leaf: #ffffff;  --on-volt: #ffffff;
+  --on-bloom: #1a0710; --on-moss: #ffffff;  --on-frost: #04161a; --on-flare: #1c0606;
+
+  --good-ink: #46c246;
+  --warn-ink: #f6c452;
+  --bad-ink:  #f07b7b;
+
+  --accent: #5b9bd0;
+  --accent-ink: #04121f;
+  --accent-soft: rgba(91, 155, 208, 0.16);
 }
 
 /* -------------------------------------------------------------------------
-   Themes. Each sets the surface ramp plus an accent pair used for gradients,
-   rings and glows. `--glow` is the accent at low alpha for ambient lighting.
-
-   The attribute is `data-hoard-theme`, not `data-theme`: when this app is
-   embedded, the host may stamp `data-theme="light|dark"` on the same root
-   element, and two systems writing one attribute is a fight nobody wins.
-
-   Hoard commits to a dark visual world on purpose — it is a game, and the
-   nine palettes are progression rewards rather than a light/dark preference.
-   Every surface is therefore painted explicitly and none is inherited.
+   Accent themes. Each is one rank's reward and touches three variables only.
    ---------------------------------------------------------------------- */
 
-[data-hoard-theme='midnight'] {
-  --bg: #080b14;
-  --bg-2: #0c1120;
-  --surface: rgba(148, 170, 255, 0.055);
-  --surface-2: rgba(148, 170, 255, 0.095);
-  --border: rgba(148, 170, 255, 0.13);
-  --border-strong: rgba(148, 170, 255, 0.26);
-  --text: #eaefff;
-  --text-dim: #9aa6c4;
-  --text-faint: #7c88a8;
-  --accent: #6b93ff;
-  --accent-2: #8b5cf6;
-  --accent-ink: #05070f;
-  --glow: rgba(107, 147, 255, 0.22);
-}
-
-[data-hoard-theme='emberlight'] {
-  --bg: #120d09;
-  --bg-2: #1a1310;
-  --surface: rgba(255, 190, 130, 0.06);
-  --surface-2: rgba(255, 190, 130, 0.1);
-  --border: rgba(255, 190, 130, 0.15);
-  --border-strong: rgba(255, 190, 130, 0.3);
-  --text: #fdeee0;
-  --text-dim: #c5a68c;
-  --text-faint: #a68d72;
-  --accent: #ff8a3d;
-  --accent-2: #ffc93d;
-  --accent-ink: #1a0e04;
-  --glow: rgba(255, 138, 61, 0.22);
-}
-
-[data-hoard-theme='deepsea'] {
-  --bg: #041018;
-  --bg-2: #061a26;
-  --surface: rgba(110, 230, 240, 0.055);
-  --surface-2: rgba(110, 230, 240, 0.1);
-  --border: rgba(110, 230, 240, 0.14);
-  --border-strong: rgba(110, 230, 240, 0.28);
-  --text: #e2f7fb;
-  --text-dim: #8fb6c2;
-  --text-faint: #7099a6;
-  --accent: #22d3ee;
-  --accent-2: #3b82f6;
-  --accent-ink: #02121a;
-  --glow: rgba(34, 211, 238, 0.2);
-}
-
-[data-hoard-theme='verdant'] {
-  --bg: #06120c;
-  --bg-2: #0a1c13;
-  --surface: rgba(134, 239, 172, 0.055);
-  --surface-2: rgba(134, 239, 172, 0.1);
-  --border: rgba(134, 239, 172, 0.14);
-  --border-strong: rgba(134, 239, 172, 0.28);
-  --text: #e6f9ec;
-  --text-dim: #96bda6;
-  --text-faint: #789e86;
-  --accent: #4ade80;
-  --accent-2: #a3e635;
-  --accent-ink: #04140a;
-  --glow: rgba(74, 222, 128, 0.2);
-}
-
-[data-hoard-theme='royal'] {
-  --bg: #0f0818;
-  --bg-2: #170d25;
-  --surface: rgba(216, 180, 254, 0.06);
-  --surface-2: rgba(216, 180, 254, 0.1);
-  --border: rgba(216, 180, 254, 0.15);
-  --border-strong: rgba(216, 180, 254, 0.3);
-  --text: #f5ecff;
-  --text-dim: #b49dcd;
-  --text-faint: #9782ae;
-  --accent: #a855f7;
-  --accent-2: #ec4899;
-  --accent-ink: #12061c;
-  --glow: rgba(168, 85, 247, 0.24);
-}
-
-[data-hoard-theme='ice'] {
-  --bg: #070d16;
-  --bg-2: #0c1523;
-  --surface: rgba(186, 224, 255, 0.06);
-  --surface-2: rgba(186, 224, 255, 0.11);
-  --border: rgba(186, 224, 255, 0.16);
-  --border-strong: rgba(186, 224, 255, 0.32);
-  --text: #edf6ff;
-  --text-dim: #9db4cc;
-  --text-faint: #8098b0;
-  --accent: #7dd3fc;
-  --accent-2: #c7d2fe;
-  --accent-ink: #04101c;
-  --glow: rgba(125, 211, 252, 0.22);
-}
-
-[data-hoard-theme='dragonfire'] {
-  --bg: #120707;
-  --bg-2: #1c0c0b;
-  --surface: rgba(255, 160, 140, 0.06);
-  --surface-2: rgba(255, 160, 140, 0.11);
-  --border: rgba(255, 160, 140, 0.16);
-  --border-strong: rgba(255, 160, 140, 0.32);
-  --text: #ffeceb;
-  --text-dim: #c99e99;
-  --text-faint: #ab8480;
-  --accent: #ff4d4d;
-  --accent-2: #ff9f1c;
-  --accent-ink: #1a0505;
-  --glow: rgba(255, 77, 77, 0.24);
-}
-
-[data-hoard-theme='aurum'] {
-  --bg: #100e08;
-  --bg-2: #191509;
-  --surface: rgba(245, 209, 130, 0.06);
-  --surface-2: rgba(245, 209, 130, 0.11);
-  --border: rgba(245, 209, 130, 0.16);
-  --border-strong: rgba(245, 209, 130, 0.34);
-  --text: #fbf3df;
-  --text-dim: #c3ad83;
-  --text-faint: #a49270;
-  --accent: #f5c451;
-  --accent-2: #e08a2e;
-  --accent-ink: #161104;
-  --glow: rgba(245, 196, 81, 0.24);
-}
-
-[data-hoard-theme='void'] {
-  --bg: #030308;
-  --bg-2: #08070f;
-  --surface: rgba(200, 190, 255, 0.055);
-  --surface-2: rgba(200, 190, 255, 0.1);
-  --border: rgba(200, 190, 255, 0.15);
-  --border-strong: rgba(200, 190, 255, 0.34);
-  --text: #f2f0ff;
-  --text-dim: #a6a1c4;
-  --text-faint: #8884a5;
-  --accent: #b18cff;
-  --accent-2: #e6e6ff;
-  --accent-ink: #05040c;
-  --glow: rgba(177, 140, 255, 0.26);
-}
+[data-hoard-accent='wave']  { --accent: var(--t-wave);  --accent-ink: var(--on-wave);  --accent-soft: rgba(42, 120, 214, 0.13); }
+[data-hoard-accent='ember'] { --accent: var(--t-ember); --accent-ink: var(--on-ember); --accent-soft: rgba(235, 104, 52, 0.14); }
+[data-hoard-accent='leaf']  { --accent: var(--t-leaf);  --accent-ink: var(--on-leaf);  --accent-soft: rgba(27, 175, 122, 0.14); }
+[data-hoard-accent='volt']  { --accent: var(--t-volt);  --accent-ink: var(--on-volt);  --accent-soft: rgba(237, 161, 0, 0.15); }
+[data-hoard-accent='bloom'] { --accent: var(--t-bloom); --accent-ink: var(--on-bloom); --accent-soft: rgba(232, 123, 164, 0.15); }
+[data-hoard-accent='moss']  { --accent: var(--t-moss);  --accent-ink: var(--on-moss);  --accent-soft: rgba(0, 131, 0, 0.13); }
+[data-hoard-accent='frost'] { --accent: var(--t-frost); --accent-ink: var(--on-frost); --accent-soft: rgba(0, 153, 176, 0.14); }
+[data-hoard-accent='flare'] { --accent: var(--t-flare); --accent-ink: var(--on-flare); --accent-soft: rgba(227, 73, 72, 0.14); }

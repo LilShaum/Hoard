@@ -18,9 +18,9 @@ import { setSoundEnabled } from '@/ui/feedback'
 import { IconPlus } from '@/ui/Icons'
 
 const TITLES: Record<Tab, { title: string; sub?: string }> = {
-  home: { title: 'Hoard' },
+  home: { title: 'Hoard', sub: 'Field guide to your money' },
   vaults: { title: 'Vaults', sub: 'The things you are saving for' },
-  quests: { title: 'Quests', sub: 'Targets worth XP' },
+  quests: { title: 'Goals', sub: 'Limits, targets and quests' },
   progress: { title: 'Progress', sub: 'Rank, records and badges' },
   profile: { title: 'You', sub: 'Settings and your data' },
 }
@@ -34,7 +34,7 @@ export function App() {
   const [levelUp, setLevelUp] = useState<LevelUp | null>(null)
   const [, forceRender] = useState(0)
 
-  useThemeEffect(profile.theme, profile.reduceMotion)
+  useThemeEffect(profile.theme, profile.appearance, profile.reduceMotion)
   useGameEffects(d, setLevelUp)
   usePersistOnHide(flush)
   useMidnightRefresh(useCallback(() => forceRender((n) => n + 1), []))
@@ -88,18 +88,19 @@ export function App() {
               {meta.sub && <p className="topbar__sub">{meta.sub}</p>}
             </div>
             {tab !== 'home' && (
-              <button className="btn btn--primary btn--icon" onClick={() => openSave(null)} aria-label="Add to the hoard">
-                <IconPlus size={20} />
+              <button className="btn btn--primary btn--icon" onClick={() => openSave(null)}
+                      aria-label="Log an amount">
+                <IconPlus size={18} />
               </button>
             )}
           </header>
         )}
 
         <main>
-          {route.name === 'home' && <Home onSave={openSave} navigate={navigate} />}
+          {route.name === 'home' && <Home onLog={openSave} navigate={navigate} />}
           {route.name === 'vaults' && <Vaults navigate={navigate} />}
           {route.name === 'vault' && (
-            <VaultDetail vaultId={route.vaultId} navigate={navigate} onSave={openSave} />
+            <VaultDetail vaultId={route.vaultId} navigate={navigate} onLog={openSave} />
           )}
           {route.name === 'quests' && <Quests />}
           {route.name === 'progress' && <Progress />}

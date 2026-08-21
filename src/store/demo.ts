@@ -28,21 +28,22 @@ export function demoState(): State {
   const start = addDays(weekStart(today), -7 * 25)
 
   const christmas = mk({
-    name: 'Christmas', emoji: '🎄', target: 60_000, deadline: `${christmasYear}-12-20`,
-    color: 'rose', createdAt: addDays(start, 14), note: 'Presents, food, the lot', completedAt: null,
+    name: 'Christmas', glyph: 'gift', type: 'flare', target: 60_000,
+    deadline: `${christmasYear}-12-20`, createdAt: addDays(start, 14),
+    note: 'Presents, food, the lot', completedAt: null,
   })
   const trip = mk({
-    name: 'Japan trip', emoji: '✈️', target: 240_000, deadline: addMonths(today, 9),
-    color: 'azure', createdAt: start, note: 'Two weeks, spring', completedAt: null,
+    name: 'Japan trip', glyph: 'plane', type: 'wave', target: 240_000,
+    deadline: addMonths(today, 9), createdAt: start, note: 'Two weeks, spring', completedAt: null,
   })
   const rainy = mk({
-    name: 'Emergency fund', emoji: '🛟', target: 150_000, deadline: null,
-    color: 'teal', createdAt: start, note: 'Three months of rent', completedAt: null,
+    name: 'Emergency fund', glyph: 'wave', type: 'frost', target: 150_000, deadline: null,
+    createdAt: start, note: 'Three months of rent', completedAt: null,
   })
   const phone = mk({
-    name: 'New phone', emoji: '📱', target: 70_000, deadline: addMonths(today, -1),
-    color: 'violet', createdAt: addDays(start, 7), note: 'The old one is held together with tape',
-    completedAt: null,
+    name: 'New phone', glyph: 'phone', type: 'leaf', target: 70_000,
+    deadline: addMonths(today, -1), createdAt: addDays(start, 7),
+    note: 'The old one is held together with tape', completedAt: null,
   })
 
   const vaults = [christmas, trip, rainy, phone]
@@ -56,6 +57,7 @@ export function demoState(): State {
   }
 
   const NOTES = ['Payday', 'Skipped a takeaway', 'Sold something', 'Round-up', 'Cancelled a subscription', '']
+  const SPEND_NOTES = ['Groceries', 'Coffee', 'Bus fare', 'Takeaway', 'Pub', 'Cinema', 'Petrol', 'Haircut', '']
 
   for (let week = 0; week < 26; week++) {
     const monday = addDays(start, week * 7)
@@ -80,6 +82,18 @@ export function demoState(): State {
       push(day, amount, vault, rng() < 0.4 ? NOTES[Math.floor(rng() * NOTES.length)] : '')
     }
 
+    // Spending: three to six purchases a week, mostly landing under the limit
+    // but not always — a wall of green weeks would not be believable.
+    const overspend = week % 5 === 3
+    const purchases = 3 + Math.floor(rng() * 4)
+    for (let i = 0; i < purchases; i++) {
+      const day = addDays(monday, Math.floor(rng() * 7))
+      if (day > today) continue
+      const size = overspend ? 1_800 + rng() * 3_600 : 900 + rng() * 2_600
+      push(day, Math.round(size / 50) * 50, null,
+        SPEND_NOTES[Math.floor(rng() * SPEND_NOTES.length)], 'spend')
+    }
+
     // Payday lump on the first week of each month.
     if (monday.slice(8) <= '07') {
       push(monday, 12_000 + Math.round(rng() * 60) * 100, rng() < 0.5 ? trip.id : rainy.id, 'Payday')
@@ -102,6 +116,7 @@ export function demoState(): State {
       ...base.profile,
       name: 'Sam',
       monthlyTarget: 40_000,
+      weeklyLimit: 12_000,
       onboarded: true,
       createdAt: monthStart(start),
     },

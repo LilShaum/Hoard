@@ -1,16 +1,29 @@
 import type { ThemeKey } from '@/domain/types'
 import { RANKS } from '@/domain/xp'
 
-export const THEME_LABEL: Record<string, string> = {
-  midnight: 'Midnight',
-  emberlight: 'Emberlight',
-  deepsea: 'Deep Sea',
-  verdant: 'Verdant',
-  royal: 'Royal',
-  ice: 'Ice',
-  dragonfire: 'Dragonfire',
-  aurum: 'Aurum',
-  void: 'Void',
+export const THEME_LABEL: Record<ThemeKey, string> = {
+  field: 'Field',
+  wave: 'Wave',
+  ember: 'Ember',
+  leaf: 'Leaf',
+  volt: 'Volt',
+  bloom: 'Bloom',
+  moss: 'Moss',
+  frost: 'Frost',
+  flare: 'Flare',
+}
+
+/** Swatches mirror the light-mode type hues in tokens.css. */
+export const THEME_SWATCH: Record<ThemeKey, string> = {
+  field: '#234a6e',
+  wave: '#2a78d6',
+  ember: '#eb6834',
+  leaf: '#1baf7a',
+  volt: '#eda100',
+  bloom: '#e87ba4',
+  moss: '#008300',
+  frost: '#0099b0',
+  flare: '#e34948',
 }
 
 export type ThemeInfo = {
@@ -18,26 +31,13 @@ export type ThemeInfo = {
   label: string
   unlockLevel: number
   rankName: string
-  swatch: [string, string]
-}
-
-/** Swatches mirror each theme's accent pair from tokens.css. */
-const SWATCHES: Record<ThemeKey, [string, string]> = {
-  midnight: ['#6b93ff', '#8b5cf6'],
-  emberlight: ['#ff8a3d', '#ffc93d'],
-  deepsea: ['#22d3ee', '#3b82f6'],
-  verdant: ['#4ade80', '#a3e635'],
-  royal: ['#a855f7', '#ec4899'],
-  ice: ['#7dd3fc', '#c7d2fe'],
-  dragonfire: ['#ff4d4d', '#ff9f1c'],
-  aurum: ['#f5c451', '#e08a2e'],
-  void: ['#b18cff', '#e6e6ff'],
+  swatch: string
 }
 
 export const THEMES: ThemeInfo[] = RANKS.map((r) => ({
   key: r.theme,
-  label: THEME_LABEL[r.theme] ?? r.theme,
+  label: THEME_LABEL[r.theme],
   unlockLevel: r.minLevel,
   rankName: r.name,
-  swatch: SWATCHES[r.theme],
+  swatch: THEME_SWATCH[r.theme],
 }))

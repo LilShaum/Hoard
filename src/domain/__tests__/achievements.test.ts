@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ACHIEVEMENTS, ACHIEVEMENTS_BY_ID, achievementXp, evaluateAchievements } from '../achievements'
+import { EMPTY_BUDGET } from '../budget'
 import { derive } from '../selectors'
 import { entry, state, vault, weeklyDeposits } from './factory'
 
@@ -12,11 +13,11 @@ describe('the catalogue', () => {
     expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(ACHIEVEMENTS.length)
   })
 
-  it('gives every badge a name, description, icon and tier', () => {
+  it('gives every badge a name, description, shape and tier', () => {
     for (const a of ACHIEVEMENTS) {
       expect(a.name.length).toBeGreaterThan(0)
       expect(a.description.length).toBeGreaterThan(0)
-      expect(a.icon.length).toBeGreaterThan(0)
+      expect(a.shape.length).toBeGreaterThan(0)
       expect([1, 2, 3]).toContain(a.tier)
       expect(a.xp).toBeGreaterThanOrEqual(0)
     }
@@ -35,7 +36,8 @@ describe('the catalogue', () => {
     expect(() => evaluateAchievements({
       today: TODAY, entries: [], deposits: [], withdrawals: [], vaults: [],
       completedVaults: [], totalDeposited: 0, totalSaved: 0, streak: empty.streak,
-      records: empty.records, monthlyNet: new Map(), monthlyTarget: 0, level: 1,
+      records: empty.records, monthlyNet: new Map(), monthlyTarget: 0,
+      weeklyLimit: 0, budget: EMPTY_BUDGET, level: 1,
       claimedQuestCount: 0, activeVaultCount: 0,
     }, {})).not.toThrow()
   })
@@ -139,6 +141,11 @@ describe('behavioural badges', () => {
 })
 
 describe('hidden badges', () => {
+  it('gives tiered families one shared shape, so a ladder reads as a ladder', () => {
+    const vol = ACHIEVEMENTS.filter((a) => a.family === 'volume')
+    expect(new Set(vol.map((a) => a.shape)).size).toBe(1)
+  })
+
   it('marks the surprises as hidden', () => {
     const hidden = ACHIEVEMENTS.filter((a) => a.hidden).map((a) => a.id)
     expect(hidden).toContain('comeback')

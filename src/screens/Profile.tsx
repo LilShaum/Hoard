@@ -57,29 +57,29 @@ export function Profile() {
     a.click()
     a.remove()
     setTimeout(() => URL.revokeObjectURL(url), 2_000)
-    toast('Backup downloaded', '💾')
+    toast('Backup downloaded')
   }
 
   const copyBackup = async () => {
     const json = backupText ?? exportState(state)
     try {
       await navigator.clipboard.writeText(json)
-      toast('Backup copied to the clipboard', '📋')
+      toast('Backup copied to the clipboard')
     } catch {
-      toast('Select the text and copy it', 'ℹ️')
+      toast('Select the text and copy it')
     }
   }
 
   const restoreFromText = (text: string) => {
     const next = importState(text)
     if (!next) {
-      toast("That doesn't look like a Hoard backup", '⚠️')
+      toast("That doesn't look like a Hoard backup")
       return
     }
     suppressNextCelebration()
     dispatch({ type: 'state/replace', state: next })
     setRestoreText(null)
-    toast(`Restored ${next.entries.length} entries`, '📥')
+    toast(`Restored ${next.entries.length} entries`)
   }
 
   const onFile = async (file: File | undefined) => {
@@ -87,21 +87,21 @@ export function Profile() {
     const text = await file.text()
     const next = importState(text)
     if (!next) {
-      toast("That file doesn't look like a Hoard backup", '⚠️')
+      toast("That file doesn't look like a Hoard backup")
       return
     }
     suppressNextCelebration()
     dispatch({ type: 'state/replace', state: next })
-    toast(`Restored ${next.entries.length} entries`, '📥')
+    toast(`Restored ${next.entries.length} entries`)
   }
 
   const themeUnlocked = (level: number) => d.level.level >= level
 
   return (
     <div className="stack stack--lg">
-      <section className="card card--pad-lg stack stack--md">
+      <section className="panel panel__body stack stack--md">
         <div className="field">
-          <label className="field__label" htmlFor="profile-name">What should we call you?</label>
+          <label className="label" htmlFor="profile-name">What should we call you?</label>
           <input
             id="profile-name"
             className="input"
@@ -113,7 +113,7 @@ export function Profile() {
         </div>
 
         <div className="field">
-          <label className="field__label" htmlFor="profile-currency">Currency</label>
+          <label className="label" htmlFor="profile-currency">Currency</label>
           <select
             id="profile-currency"
             className="select"
@@ -130,12 +130,37 @@ export function Profile() {
         </div>
       </section>
 
+      {/* ---------------------------------------------------------- appearance */}
+      <section className="panel">
+        <header className="panel__head"><span className="label">Appearance</span></header>
+        <div className="panel__body stack stack--sm">
+          <div className="seg" role="group" aria-label="Appearance">
+            {(['light', 'dark', 'system'] as const).map((mode) => (
+              <button
+                key={mode}
+                className="seg__opt"
+                aria-pressed={profile.appearance === mode}
+                onClick={() => set({ appearance: mode })}
+              >
+                {mode === 'system' ? 'Match device' : mode === 'light' ? 'Light' : 'Dark'}
+              </button>
+            ))}
+          </div>
+          <p className="tiny faint">
+            Both are designed rather than inverted — the eight type colours are stepped
+            separately for each so a vault stays legible either way.
+          </p>
+        </div>
+      </section>
+
       {/* -------------------------------------------------------------- themes */}
-      <section>
-        <h2 className="section-title">
-          Themes
-          <span className="faint">{profile.unlockedThemes.length} / {THEMES.length} unlocked</span>
-        </h2>
+      <section className="section">
+        <div className="section__head">
+          <span className="label">Accent</span>
+          <span className="tiny faint num">
+            {profile.unlockedThemes.length} / {THEMES.length} unlocked
+          </span>
+        </div>
         <ul className="themegrid">
           {THEMES.map((t) => {
             const unlocked = themeUnlocked(t.unlockLevel)
@@ -150,7 +175,7 @@ export function Profile() {
                 >
                   <span
                     className="themeopt__swatch"
-                    style={{ background: `linear-gradient(135deg, ${t.swatch[0]}, ${t.swatch[1]})` }}
+                    style={{ background: t.swatch }}
                     aria-hidden
                   />
                   <span className="themeopt__name">{t.label}</span>
@@ -162,11 +187,14 @@ export function Profile() {
             )
           })}
         </ul>
-        <p className="tiny faint">Each rank unlocks the next theme. {d.nextRank && `${d.nextRank.name} is at level ${d.nextRank.minLevel}.`}</p>
+        <p className="tiny faint">
+          Each rank unlocks the next accent.
+          {d.nextRank && ` ${d.nextRank.name} arrives at level ${d.nextRank.minLevel}.`}
+        </p>
       </section>
 
       {/* ------------------------------------------------------------ toggles */}
-      <section className="card stack stack--sm">
+      <section className="panel panel__body stack stack--sm">
         <Toggle
           label="Sound effects"
           hint="Coin pings and level-up fanfares, synthesised — nothing to download."
@@ -186,8 +214,8 @@ export function Profile() {
       </section>
 
       {/* --------------------------------------------------------------- data */}
-      <section className="card stack stack--md">
-        <h2 className="section-title">Your data</h2>
+      <section className="panel panel__body stack stack--md">
+        <span className="label">Your data</span>
         <p className="small muted">
           Everything lives in this browser. Nothing is uploaded, there's no account, and
           no one — including us — can see it. That also means clearing your browser data
@@ -197,19 +225,19 @@ export function Profile() {
 
         <div className="row row--tight row--wrap">
           {canDownload && (
-            <button className="btn btn--ghost btn--sm" onClick={backup}>Download backup</button>
+            <button className="btn btn--sm" onClick={backup}>Download backup</button>
           )}
           {/* Always offered: if the environment detection above is ever wrong,
               this is the path that still works. */}
-          <button className="btn btn--ghost btn--sm" onClick={() => setBackupText(exportState(state))}>
+          <button className="btn btn--sm" onClick={() => setBackupText(exportState(state))}>
             Copy backup
           </button>
           {canDownload && (
-            <button className="btn btn--ghost btn--sm" onClick={() => fileRef.current?.click()}>
+            <button className="btn btn--sm" onClick={() => fileRef.current?.click()}>
               Restore from file
             </button>
           )}
-          <button className="btn btn--ghost btn--sm" onClick={() => setRestoreText('')}>
+          <button className="btn btn--sm" onClick={() => setRestoreText('')}>
             Paste a backup
           </button>
           <input
@@ -222,7 +250,7 @@ export function Profile() {
         </div>
 
         <div className="row row--tight row--wrap">
-          <button className="btn btn--ghost btn--sm" onClick={() => setConfirmDemo(true)}>
+          <button className="btn btn--sm" onClick={() => setConfirmDemo(true)}>
             Load demo data
           </button>
           <button className="btn btn--danger btn--sm" onClick={() => setConfirmReset(true)}>
@@ -317,7 +345,7 @@ export function Profile() {
                 suppressNextCelebration()
                 dispatch({ type: 'state/replace', state: initialState() })
                 setConfirmReset(false)
-                toast('Everything cleared', '🧹')
+                toast('Everything cleared')
               }}
             >
               Erase
@@ -345,7 +373,7 @@ export function Profile() {
                 suppressNextCelebration()
                 dispatch({ type: 'state/replace', state: demoState() })
                 setConfirmDemo(false)
-                toast('Six months of demo saving loaded', '🎲')
+                toast('Six months of demo saving loaded')
               }}
             >
               Load it

@@ -2,6 +2,7 @@ import { useId } from 'react'
 import type { VaultView } from '@/domain/selectors'
 import { daysBetween, formatShort, todayISO } from '@/domain/dates'
 import { linear, smoothPath } from './scale'
+import { signed } from '@/domain/stats'
 
 const W = 320
 const H = 130
@@ -33,7 +34,7 @@ export function VaultProjection({ vault, money }: { vault: VaultView; money: (c:
   let running = 0
   const actual: Array<[number, number]> = [[x(0), y(0)]]
   for (const e of vault.entries) {
-    running += e.kind === 'deposit' ? e.amount : -e.amount
+    running += signed(e)
     actual.push([x(daysBetween(start, e.date)), y(Math.max(0, running))])
   }
   actual.push([x(daysBetween(start, today)), y(Math.max(0, vault.saved))])

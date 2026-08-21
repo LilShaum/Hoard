@@ -3,11 +3,12 @@ import {
   daysLeftInMonth, formatMonthLabel, monthEnd, monthKey, monthStart, todayISO,
 } from './dates'
 import { clamp01, ratio } from './money'
+import { computeBudget, type BudgetView } from './budget'
 import { computePace, type Pace } from './pace'
 import { computeStreak, type StreakInfo } from './streak'
 import {
   byMonth, depositDays as depositDaysOf, depositsOf, netOf, records as computeRecords,
-  withdrawalsOf, type Records,
+  signed, spendOf, withdrawalsOf, type Records,
 } from './stats'
 import {
   levelForXp, nextRank as nextRankFor, rankForLevel, xpForDeposit, xpForVaultCompletion,
@@ -77,6 +78,8 @@ export type Derived = {
   totalDeposited: Cents
   totalWithdrawn: Cents
   streak: StreakInfo
+  budget: BudgetView
+  totalSpent: Cents
   level: LevelInfo
   rank: Rank
   nextRank: Rank | null
@@ -102,7 +105,7 @@ function reachedDate(target: Cents | null, entries: Entry[]): ISODate | null {
   if (target == null || target <= 0) return null
   let running = 0
   for (const e of chronological(entries)) {
-    running += e.kind === 'deposit' ? e.amount : -e.amount
+    running += signed(e)
     if (running >= target) return e.date
   }
   return null
@@ -140,6 +143,7 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
   const byVault = new Map<string, Entry[]>()
   const general: Entry[] = []
   for (const e of entries) {
+    if (e.kind === 'spend') continue
     if (e.vaultId == null) general.push(e)
     else {
       const list = byVault.get(e.vaultId)
@@ -175,7 +179,9 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
   const totalSaved = netOf(entries)
   const totalDeposited = depositsOf(entries)
   const totalWithdrawn = withdrawalsOf(entries)
+  const totalSpent = spendOf(entries)
   const generalSaved = netOf(general)
+  const budget = computeBudget(entries, state.profile.weeklyLimit, today)
 
   const depositDays = depositDaysOf(entries)
   const streak = computeStreak(depositDays, today)
@@ -230,6 +236,8 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
     records,
     monthlyNet: monthly,
     monthlyTarget: mTarget,
+    weeklyLimit: state.profile.weeklyLimit,
+    budget,
     level: preLevel,
     claimedQuestCount: Object.keys(state.progress.claimedQuests).length,
     activeVaultCount: live.length,
@@ -256,6 +264,7 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
     entries,
     vaults: state.vaults,
     monthlyTarget: mTarget,
+    weeklyLimit: state.profile.weeklyLimit,
     claimed: state.progress.claimedQuests,
   })
 
@@ -276,7 +285,9 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
     totalSaved,
     totalDeposited,
     totalWithdrawn,
+    totalSpent,
     streak,
+    budget,
     level,
     rank,
     nextRank: nextRankFor(level.level),

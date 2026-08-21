@@ -34,7 +34,7 @@ describe('entries', () => {
 
 describe('vaults', () => {
   it('moves money to the general hoard when a vault is deleted, never destroying it', () => {
-    let s = reducer(start(), addVault({ name: 'Trip', emoji: '✈️', target: 100_000, deadline: null, color: 'azure' }))
+    let s = reducer(start(), addVault({ name: 'Trip', glyph: 'plane', type: 'wave', target: 100_000, deadline: null }))
     const id = s.vaults[0].id
     s = reducer(s, addEntry({ amount: 30_000, vaultId: id, date: TODAY }))
     const before = derive(s, TODAY).totalSaved
@@ -48,12 +48,12 @@ describe('vaults', () => {
   })
 
   it('patches without clobbering untouched fields', () => {
-    let s = reducer(start(), addVault({ name: 'Trip', emoji: '✈️', target: 100_000, deadline: null, color: 'azure' }))
+    let s = reducer(start(), addVault({ name: 'Trip', glyph: 'plane', type: 'wave', target: 100_000, deadline: null }))
     const id = s.vaults[0].id
     s = reducer(s, { type: 'vault/update', id, patch: { name: 'Japan' } })
     expect(s.vaults[0].name).toBe('Japan')
     expect(s.vaults[0].target).toBe(100_000)
-    expect(s.vaults[0].emoji).toBe('✈️')
+    expect(s.vaults[0].glyph).toBe('plane')
   })
 
   it('celebrates a vault only once', () => {
@@ -88,9 +88,9 @@ describe('progress', () => {
   })
 
   it('merges theme unlocks without duplicating', () => {
-    let s = reducer(start(), { type: 'theme/unlock', themes: ['verdant', 'royal'] })
-    s = reducer(s, { type: 'theme/unlock', themes: ['royal'] })
-    expect(s.profile.unlockedThemes).toEqual(['midnight', 'verdant', 'royal'])
+    let s = reducer(start(), { type: 'theme/unlock', themes: ['leaf', 'bloom'] })
+    s = reducer(s, { type: 'theme/unlock', themes: ['bloom'] })
+    expect(s.profile.unlockedThemes).toEqual(['field', 'leaf', 'bloom'])
   })
 })
 
@@ -99,7 +99,7 @@ describe('immutability', () => {
     const s = start()
     const snapshot = JSON.stringify(s)
     reducer(s, addEntry({ amount: 1_000, date: TODAY }))
-    reducer(s, addVault({ name: 'X', emoji: '🎯', target: 1, deadline: null, color: 'gold' }))
+    reducer(s, addVault({ name: 'X', glyph: 'coin', type: 'wave', target: 1, deadline: null }))
     reducer(s, { type: 'profile/update', patch: { name: 'Changed' } })
     expect(JSON.stringify(s)).toBe(snapshot)
   })

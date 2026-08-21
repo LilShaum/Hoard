@@ -1,15 +1,22 @@
 import { useEffect, useRef } from 'react'
 import type { Derived } from '@/domain/selectors'
 import { ACHIEVEMENTS_BY_ID } from '@/domain/achievements'
-import { themesUnlockedAt } from '@/domain/xp'
+import { rankForLevel, themesUnlockedAt } from '@/domain/xp'
+import { stageForLevel } from '@/ui/Creature'
 import { todayISO } from '@/domain/dates'
 import { dispatch, dispatchAll, getState } from '@/store/store'
 import type { Action } from '@/store/reducer'
 import { toast } from '@/ui/toast'
-import { confetti } from '@/ui/confetti'
 import { haptic, soundComplete, soundLevelUp } from '@/ui/feedback'
 
-export type LevelUp = { level: number; rankName: string; sigil: string; unlockedTheme: string | null }
+export type LevelUp = {
+  level: number
+  fromLevel: number
+  rankName: string
+  rankChanged: boolean
+  evolved: boolean
+  unlockedTheme: string | null
+}
 
 let quietNext = false
 
@@ -49,7 +56,7 @@ export function useGameEffects(d: Derived, onLevelUp: (info: LevelUp) => void): 
         d.pendingAchievements.slice(0, 4).forEach((id, i) => {
           const a = ACHIEVEMENTS_BY_ID[id]
           if (!a) return
-          setTimeout(() => toast(`${a.name} unlocked`, a.icon, a.xp || undefined), 260 * i)
+          setTimeout(() => toast(`Badge earned — ${a.name}`, a.xp || undefined), 260 * i)
         })
       }
     }
@@ -59,10 +66,9 @@ export function useGameEffects(d: Derived, onLevelUp: (info: LevelUp) => void): 
       (v) => v.isComplete && !state.progress.celebratedVaults.includes(v.id))
     for (const v of freshlyDone) actions.push({ type: 'vault/celebrated', id: v.id })
     if (!quiet && freshlyDone.length > 0) {
-      confetti({ count: 130, power: 1.15 })
       soundComplete()
       haptic([18, 60, 18, 60, 40])
-      toast(`${freshlyDone[0].name} is full!`, freshlyDone[0].emoji)
+      toast(`${freshlyDone[0].name} is full`)
     }
 
     /* --------------------------------------------------------- theme unlocks */
@@ -74,10 +80,13 @@ export function useGameEffects(d: Derived, onLevelUp: (info: LevelUp) => void): 
     if (d.level.level > state.progress.seenLevel) {
       actions.push({ type: 'level/seen', level: d.level.level })
       if (!quiet) {
+        const from = state.progress.seenLevel
         onLevelUp({
           level: d.level.level,
+          fromLevel: from,
           rankName: d.rank.name,
-          sigil: d.rank.sigil,
+          rankChanged: rankForLevel(from).key !== d.rank.key,
+          evolved: stageForLevel(from) !== stageForLevel(d.level.level),
           unlockedTheme: missing.length > 0 ? missing[missing.length - 1] : null,
         })
         soundLevelUp()
@@ -91,14 +100,30 @@ export function useGameEffects(d: Derived, onLevelUp: (info: LevelUp) => void): 
   }, [d, onLevelUp])
 }
 
-/** Keeps the <html> theme attribute and reduced-motion flag in sync. */
-export function useThemeEffect(theme: string, reduceMotion: boolean): void {
+/**
+ * Keeps the root attributes in sync. Appearance is resolved to a concrete
+ * light/dark value here rather than left to a media query, so the two axes
+ * (appearance and accent) stay independent and 'system' can still react live.
+ */
+export function useThemeEffect(theme: string, appearance: string, reduceMotion: boolean): void {
   useEffect(() => {
-    document.documentElement.dataset.hoardTheme = theme
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const apply = () => {
+      const resolved = appearance === 'system' ? (media.matches ? 'dark' : 'light') : appearance
+      document.documentElement.dataset.hoardAppearance = resolved
+      const meta = document.querySelector('meta[name="theme-color"]')
+      const plane = getComputedStyle(document.documentElement).getPropertyValue('--plane').trim()
+      if (meta && plane) meta.setAttribute('content', plane)
+    }
+    apply()
+    if (appearance !== 'system') return
+    media.addEventListener('change', apply)
+    return () => media.removeEventListener('change', apply)
+  }, [appearance, theme])
+
+  useEffect(() => {
+    document.documentElement.dataset.hoardAccent = theme
     document.body.dataset.reduceMotion = String(reduceMotion)
-    const meta = document.querySelector('meta[name="theme-color"]')
-    const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
-    if (meta && bg) meta.setAttribute('content', bg)
   }, [theme, reduceMotion])
 }
 

@@ -5,9 +5,18 @@ import {
 
 /** Pure aggregations. Everything the charts and records need, nothing they don't. */
 
+/**
+ * The amount an entry moves the hoard by. Spending is money that left the
+ * everyday account, not the hoard, so it signs to zero here — every balance in
+ * the app routes through this function precisely so that stays true.
+ */
+export function signed(e: Entry): Cents {
+  return e.kind === 'deposit' ? e.amount : e.kind === 'withdrawal' ? -e.amount : 0
+}
+
 export function netOf(entries: Entry[]): Cents {
   let n = 0
-  for (const e of entries) n += e.kind === 'deposit' ? e.amount : -e.amount
+  for (const e of entries) n += signed(e)
   return n
 }
 
@@ -23,11 +32,17 @@ export function withdrawalsOf(entries: Entry[]): Cents {
   return n
 }
 
+export function spendOf(entries: Entry[]): Cents {
+  let n = 0
+  for (const e of entries) if (e.kind === 'spend') n += e.amount
+  return n
+}
+
 export function groupNet(entries: Entry[], key: (e: Entry) => string): Map<string, Cents> {
   const m = new Map<string, Cents>()
   for (const e of entries) {
     const k = key(e)
-    m.set(k, (m.get(k) ?? 0) + (e.kind === 'deposit' ? e.amount : -e.amount))
+    m.set(k, (m.get(k) ?? 0) + signed(e))
   }
   return m
 }

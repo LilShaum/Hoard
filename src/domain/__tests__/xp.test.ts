@@ -3,6 +3,7 @@ import {
   levelForXp, MAX_LEVEL, nextRank, RANKS, rankForLevel, themesUnlockedAt,
   xpForDeposit, xpForLevel, xpForStreakWeek, xpForVaultCompletion,
 } from '../xp'
+import { nextStage, stageForLevel, stageName, STAGE_AT_LEVEL } from '@/ui/Creature'
 
 describe('the level curve', () => {
   it('starts at level 1 with zero XP', () => {
@@ -112,24 +113,49 @@ describe('ranks', () => {
 
   it('resolves a rank for every level', () => {
     for (let l = 1; l <= MAX_LEVEL; l++) expect(rankForLevel(l)).toBeTruthy()
-    expect(rankForLevel(1).key).toBe('wyrmling')
-    expect(rankForLevel(10).key).toBe('vaultkeeper')
-    expect(rankForLevel(14).key).toBe('vaultkeeper')
-    expect(rankForLevel(99).key).toBe('elderwyrm')
+    expect(rankForLevel(1).key).toBe('novice')
+    expect(rankForLevel(10).key).toBe('warden')
+    expect(rankForLevel(14).key).toBe('warden')
+    expect(rankForLevel(99).key).toBe('grand')
   })
 
   it('knows what comes next, and that nothing follows the last', () => {
-    expect(nextRank(1)?.key).toBe('coinsprite')
+    expect(nextRank(1)?.key).toBe('forager')
     expect(nextRank(99)).toBeNull()
   })
 
   it('unlocks one theme per rank reached', () => {
-    expect(themesUnlockedAt(1)).toEqual(['midnight'])
+    expect(themesUnlockedAt(1)).toEqual(['field'])
     expect(themesUnlockedAt(10)).toHaveLength(4)
     expect(themesUnlockedAt(99)).toHaveLength(RANKS.length)
   })
 
   it('gives every rank a distinct theme', () => {
     expect(new Set(RANKS.map((r) => r.theme)).size).toBe(RANKS.length)
+  })
+})
+
+describe('the companion line', () => {
+  it('starts at the first form and ends at the last', () => {
+    expect(stageForLevel(1)).toBe(0)
+    expect(stageForLevel(5)).toBe(0)
+    expect(stageForLevel(6)).toBe(1)
+    expect(stageForLevel(99)).toBe(4)
+  })
+
+  it('evolves on its own schedule, not the rank ladder', () => {
+    const rankLevels = new Set(RANKS.map((r) => r.minLevel))
+    const stageLevels = new Set(STAGE_AT_LEVEL.map((s) => s.level))
+    expect([...stageLevels].every((l) => rankLevels.has(l))).toBe(true)
+    expect(stageLevels.size).toBeLessThan(rankLevels.size)
+  })
+
+  it('names every form', () => {
+    for (const s of STAGE_AT_LEVEL) expect(stageName(s.stage)).toBe(s.name)
+  })
+
+  it('knows what comes next, and that nothing follows the last form', () => {
+    expect(nextStage(1)?.name).toBe('Kitling')
+    expect(nextStage(99)).toBeNull()
   })
 })

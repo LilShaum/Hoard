@@ -47,13 +47,13 @@ const settle = async () => {
 }
 
 const money = async () =>
-  Number((await page.locator('.hero__total').first().innerText()).replace(/[^\d.]/g, ''))
+  Number((await page.locator('.hoard__total').first().innerText()).replace(/[^\d.]/g, ''))
 
-const save = async (amount, button = 'Save something') => {
+const save = async (amount, button = 'Log something', confirm = 'Save it') => {
   await settle()
   await page.getByRole('button', { name: button }).click()
-  await page.getByLabel('Amount').fill(amount)
-  await page.getByRole('button', { name: 'Save it' }).click()
+  await page.getByLabel('Amount', { exact: true }).fill(amount)
+  await page.getByRole('button', { name: confirm }).click()
   // The headline figure eases to its new value; let the roll-up land.
   await page.waitForTimeout(1300)
 }
@@ -80,12 +80,17 @@ await check('onboarding creates a named profile and a Christmas vault', async ()
   await page.getByPlaceholder('Optional').fill('Jordan')
   await page.getByRole('button', { name: 'Next' }).click()
   await page.getByRole('button', { name: 'Next' }).click()
-  await page.getByRole('button', { name: '🎄 Christmas' }).click()
+  await page.getByRole('button', { name: 'Christmas', exact: true }).click()
   await page.getByRole('button', { name: 'Next' }).click()
   await page.getByRole('button', { name: '$400' }).click()
+  await page.getByRole('button', { name: 'Next' }).click()
+  await page.getByRole('button', { name: '$150' }).click()
   await page.getByRole('button', { name: 'Start my hoard' }).click()
-  await page.waitForSelector('.hero__total')
-  assert.match(await page.locator('.hero').innerText(), /Jordan/)
+  // Creating that first vault is itself worth a level, so a level-up window
+  // opens straight away — clear it before reading the screen behind it.
+  await settle()
+  await page.waitForSelector('.companion')
+  assert.match(await page.locator('.companion').textContent(), /Jordan/i)
   assert.match(await page.locator('.app__scroll').innerText(), /Christmas/)
 })
 
@@ -102,7 +107,7 @@ await check('a deposit awards XP and says so', async () => {
 
 await check('the ladder is climbed by saving', async () => {
   await settle()
-  const level = Number(await page.locator('.crest__level').innerText())
+  const level = Number((await page.locator('.companion').textContent()).match(/Lv\s*(\d+)/)?.[1] ?? 0)
   assert.ok(level >= 2, `expected past level 1, was ${level}`)
 })
 
@@ -115,19 +120,20 @@ await check('the amount parser handles a comma-grouped figure', async () => {
 await check('money lands in the vault it was aimed at', async () => {
   await go('vaults')
   await page.locator('.vaultcard').first().click()
-  await page.waitForSelector('.vaulthero')
+  await page.waitForSelector('.vaulthero__name')
   await save('100', 'Add to Christmas')
-  assert.match(await page.locator('.vaulthero__figure').innerText(), /\$100/)
+  assert.match(await page.locator('.hoard__total').first().innerText(), /\$100/)
 })
 
 await check('the pace engine reports a required weekly rate', async () => {
-  const text = await page.locator('.pacegrid').innerText()
-  assert.match(text, /Needed per week/)
+  await page.waitForSelector('.grid')
+  const text = (await page.locator('.grid').first().textContent()) ?? ''
+  assert.match(text, /Needed per week/i)
   assert.match(text, /\$\d/)
 })
 
 await check('the what-if slider moves the projected date', async () => {
-  const slider = page.getByLabel('Weekly contribution to simulate')
+  const slider = page.getByLabel('Weekly contribution to simulate', { exact: true })
   await slider.fill('0.05')
   await page.waitForTimeout(300)
   const slow = await page.locator('.whatif').innerText()
@@ -143,9 +149,10 @@ await check('everything survives a reload', async () => {
   assert.ok(raw && raw.length > 100, 'nothing was written to storage')
   await go('home')
   await page.reload({ waitUntil: 'networkidle' })
-  await page.waitForSelector('.hero__total')
+  await page.waitForSelector('.companion')
+  await settle()
   assert.equal(await money(), 1392.75)
-  assert.match(await page.locator('.hero').innerText(), /Jordan/)
+  assert.match(await page.locator('.companion').textContent(), /Jordan/)
 })
 
 /* ----------------------------------------------------------------- quests */
@@ -164,15 +171,15 @@ await check('claiming a quest removes it from the claimable pile', async () => {
 /* ----------------------------------------------------------------- themes */
 await check('an unlocked theme applies and survives a reload', async () => {
   await go('profile')
-  const before = await page.evaluate(() => document.documentElement.dataset.hoardTheme)
+  const before = await page.evaluate(() => document.documentElement.dataset.hoardAccent)
   const option = page.locator('.themeopt:not(.is-locked)').nth(1)
   if (await option.count()) {
     await option.click()
     await page.waitForTimeout(400)
-    const after = await page.evaluate(() => document.documentElement.dataset.hoardTheme)
+    const after = await page.evaluate(() => document.documentElement.dataset.hoardAccent)
     assert.notEqual(after, before)
     await page.reload({ waitUntil: 'networkidle' })
-    assert.equal(await page.evaluate(() => document.documentElement.dataset.hoardTheme), after)
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.hoardAccent), after)
   }
 })
 
@@ -185,7 +192,7 @@ await check('locked themes cannot be selected', async () => {
 await check('deleting a vault keeps its money in the general hoard', async () => {
   await go('vaults')
   await page.locator('.vaultcard').first().click()
-  await page.waitForSelector('.vaulthero')
+  await page.waitForSelector('.vaulthero__name')
   await page.getByLabel('Delete vault').click()
   await page.locator('.sheet').getByRole('button', { name: 'Delete', exact: true }).click()
   await page.waitForTimeout(700)
@@ -196,7 +203,7 @@ await check('deleting a vault keeps its money in the general hoard', async () =>
 /* --------------------------------------------------------- accessibility */
 await check('Escape closes a sheet', async () => {
   await settle()
-  await page.getByRole('button', { name: 'Save something' }).click()
+  await page.getByRole('button', { name: 'Log something' }).click()
   await page.waitForSelector('.sheet')
   await page.keyboard.press('Escape')
   await page.waitForTimeout(400)
@@ -204,7 +211,7 @@ await check('Escape closes a sheet', async () => {
 })
 
 await check('a sheet moves focus to its first control', async () => {
-  await page.getByRole('button', { name: 'Save something' }).click()
+  await page.getByRole('button', { name: 'Log something' }).click()
   await page.waitForTimeout(500)
   assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), 'Amount')
   await page.keyboard.press('Escape')
@@ -237,7 +244,7 @@ await check('every tab renders real content with no broken values', async () => 
 await check('an unknown route falls back to home rather than a blank screen', async () => {
   await page.goto(`${BASE}#/not-a-real-route`, { waitUntil: 'networkidle' })
   await page.waitForTimeout(400)
-  assert.equal(await page.locator('.hero__total').count(), 1)
+  assert.ok((await page.locator('.hoard__total').count()) >= 1)
 })
 
 /* -------------------------------------------------------------- demo data */
@@ -248,7 +255,7 @@ await check('demo data loads a full, coherent account', async () => {
   await settle()
   await go('home')
   assert.ok((await money()) > 500, 'demo account looks empty')
-  assert.ok(Number(await page.locator('.crest__level').innerText()) > 5, 'demo level too low')
+  assert.ok(/Lv\s*(1[0-9]|[6-9])/.test(await page.locator('.companion').textContent()), 'demo level too low')
 })
 
 await check('the progress screen draws its charts on real data', async () => {
@@ -258,12 +265,38 @@ await check('the progress screen draws its charts on real data', async () => {
   assert.ok((await page.locator('.ach').count()) > 20, 'achievements missing')
 })
 
+/* --------------------------------------------------------------- spending */
+await check('a spend never touches the hoard and shows in the week panel', async () => {
+  await settle()
+  await go('home')
+  const hoardBefore = await money()
+  await page.getByRole('button', { name: 'Log something' }).click()
+  await page.getByRole('button', { name: 'Spent', exact: true }).click()
+  await page.getByLabel('Amount', { exact: true }).fill('12.25')
+  await page.getByRole('button', { name: 'Log it' }).click()
+  await page.waitForTimeout(1400)
+  await settle()
+  assert.equal(await money(), hoardBefore, 'spending moved the savings total')
+  const week = await page.locator('.panel', { hasText: 'Safe to spend today' }).first().innerText()
+  assert.match(week, /spent/i)
+})
+
+await check('the weekly limit can be set and drives safe-to-spend', async () => {
+  await go('quests')
+  const panel = page.locator('.panel').filter({ hasText: 'Weekly spending limit' }).first()
+  await panel.getByRole('button', { name: /Change|Set one/ }).click()
+  await page.getByLabel('Amount', { exact: true }).fill('140')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.waitForTimeout(700)
+  assert.match(await panel.innerText(), /\$140/)
+})
+
 /* --------------------------------------------------------------- activity */
 await check('the activity ledger lists and filters the full history', async () => {
   await go('activity')
   const rows = await page.locator('.activity').count()
   assert.ok(rows > 10, `expected a full ledger, saw ${rows} rows`)
-  await page.getByRole('button', { name: 'Money out' }).click()
+  await page.getByRole('button', { name: 'Withdrawn' }).click()
   await page.waitForTimeout(400)
   const outRows = await page.locator('.activity').count()
   assert.ok(outRows > 0 && outRows < rows, 'the money-out filter did nothing')

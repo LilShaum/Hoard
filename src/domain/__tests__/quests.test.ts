@@ -11,6 +11,7 @@ const ctx = (over: Partial<QuestContext> = {}): QuestContext => ({
   entries: [],
   vaults: [],
   monthlyTarget: 40_000,
+  weeklyLimit: 0,
   claimed: {},
   ...over,
 })

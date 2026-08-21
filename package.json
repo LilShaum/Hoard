@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Hoard \u2014 a savings app that plays like a game.",
+  "description": "Hoard — a savings app that plays like a game.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -22,6 +22,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/node": "^22.20.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",

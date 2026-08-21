@@ -16,7 +16,51 @@ type Migration = (input: any) => any
  * exists so the very first breaking change is a five-line addition rather than
  * a rewrite that eats everyone's history.
  */
-export const MIGRATIONS: Record<number, Migration> = {}
+/** Emoji vaults predate the drawn glyph set; map them onto their nearest glyph. */
+const EMOJI_TO_GLYPH: Record<string, string> = {
+  '🎯': 'coin', '🎄': 'gift', '🎁': 'gift', '🛟': 'wave', '✈️': 'plane', '🏝️': 'plane',
+  '📱': 'phone', '🚗': 'car', '🎫': 'ticket', '🏠': 'house', '🎓': 'cap', '💍': 'ring',
+  '🎮': 'laptop', '💻': 'laptop', '🚲': 'bike', '🛠️': 'tools', '🐕': 'paw', '👟': 'shoe',
+  '📷': 'camera', '🎸': 'guitar', '🎨': 'guitar', '⛺': 'tent', '🏋️': 'bag', '🍜': 'bag',
+}
+
+/** The old free-floating accent names map onto the eight validated types. */
+const COLOR_TO_TYPE: Record<string, string> = {
+  gold: 'volt', ember: 'ember', rose: 'bloom', violet: 'wave',
+  azure: 'wave', teal: 'frost', lime: 'leaf', slate: 'moss',
+}
+
+const OLD_THEME_TO_ACCENT: Record<string, string> = {
+  midnight: 'field', emberlight: 'ember', deepsea: 'wave', verdant: 'leaf',
+  royal: 'bloom', ice: 'frost', dragonfire: 'flare', aurum: 'volt', void: 'moss',
+}
+
+export const MIGRATIONS: Record<number, Migration> = {
+  /**
+   * v1 → v2. Vaults carried an emoji and a loose accent name; they now carry a
+   * drawn glyph and one of the eight types. Themes moved from nine whole
+   * palettes to nine accents over one shared surface set.
+   */
+  1: (input: any) => ({
+    ...input,
+    vaults: Array.isArray(input?.vaults)
+      ? input.vaults.map((v: any) => ({
+          ...v,
+          glyph: EMOJI_TO_GLYPH[v?.emoji] ?? 'coin',
+          type: COLOR_TO_TYPE[v?.color] ?? 'wave',
+        }))
+      : input?.vaults,
+    profile: {
+      ...input?.profile,
+      weeklyLimit: input?.profile?.weeklyLimit ?? 0,
+      appearance: input?.profile?.appearance ?? 'system',
+      theme: OLD_THEME_TO_ACCENT[input?.profile?.theme] ?? 'field',
+      unlockedThemes: Array.isArray(input?.profile?.unlockedThemes)
+        ? input.profile.unlockedThemes.map((t: string) => OLD_THEME_TO_ACCENT[t] ?? 'field')
+        : ['field'],
+    },
+  }),
+}
 
 export function migrate(raw: any): any {
   let out = raw
@@ -35,6 +79,15 @@ export function migrate(raw: any): any {
 
 /* ------------------------------------------------------------- sanitising */
 
+const GLYPH_NAMES = [
+  'gift', 'plane', 'phone', 'car', 'ticket', 'house', 'cap', 'ring', 'camera',
+  'bike', 'guitar', 'tent', 'paw', 'shoe', 'laptop', 'tools', 'plant', 'wave',
+  'bag', 'coin',
+]
+const TYPE_NAMES = ['wave', 'ember', 'leaf', 'volt', 'bloom', 'moss', 'frost', 'flare']
+const THEME_NAMES = ['field', ...TYPE_NAMES]
+const APPEARANCES = ['light', 'dark', 'system']
+
 const str = (v: unknown, fallback = ''): string => (typeof v === 'string' ? v : fallback)
 const bool = (v: unknown, fallback = false): boolean => (typeof v === 'boolean' ? v : fallback)
 
@@ -50,10 +103,10 @@ function sanitiseVault(v: any, today: string): Vault | null {
   return {
     id: v.id,
     name: str(v.name, 'Untitled vault').slice(0, 80),
-    emoji: str(v.emoji, '🎯').slice(0, 8),
+    glyph: (GLYPH_NAMES.includes(str(v.glyph)) ? v.glyph : 'coin') as Vault['glyph'],
+    type: (TYPE_NAMES.includes(str(v.type)) ? v.type : 'wave') as Vault['type'],
     target: target > 0 ? target : null,
     deadline: date(v.deadline),
-    color: str(v.color, 'gold') as Vault['color'],
     createdAt: date(v.createdAt, today)!,
     completedAt: date(v.completedAt),
     archived: bool(v.archived),
@@ -67,9 +120,10 @@ function sanitiseEntry(e: any, today: string): Entry | null {
   if (amount <= 0) return null
   return {
     id: e.id,
-    vaultId: typeof e.vaultId === 'string' && e.vaultId ? e.vaultId : null,
+    // Spending never belongs to a vault, whatever a hand-edited file claims.
+    vaultId: e.kind !== 'spend' && typeof e.vaultId === 'string' && e.vaultId ? e.vaultId : null,
     amount,
-    kind: e.kind === 'withdrawal' ? 'withdrawal' : 'deposit',
+    kind: e.kind === 'withdrawal' || e.kind === 'spend' ? e.kind : 'deposit',
     date: date(e.date, today)!,
     note: str(e.note).slice(0, 200),
     createdAt: int(e.createdAt, Date.now()),
@@ -110,10 +164,12 @@ export function sanitise(raw: any): State {
       currency: /^[A-Z]{3}$/.test(str(p.currency)) ? p.currency : base.profile.currency,
       locale: str(p.locale, base.profile.locale),
       monthlyTarget: Math.max(0, int(p.monthlyTarget, 0)),
-      theme: str(p.theme, 'midnight') as State['profile']['theme'],
-      unlockedThemes: Array.isArray(p.unlockedThemes)
-        ? p.unlockedThemes.filter((t: unknown) => typeof t === 'string')
-        : ['midnight'],
+      weeklyLimit: Math.max(0, int(p.weeklyLimit, 0)),
+      theme: (THEME_NAMES.includes(str(p.theme)) ? p.theme : 'field') as State['profile']['theme'],
+      unlockedThemes: (Array.isArray(p.unlockedThemes)
+        ? p.unlockedThemes.filter((t: unknown) => typeof t === 'string' && THEME_NAMES.includes(t))
+        : ['field']) as State['profile']['unlockedThemes'],
+      appearance: (APPEARANCES.includes(str(p.appearance)) ? p.appearance : 'system') as State['profile']['appearance'],
       sound: bool(p.sound, true),
       reduceMotion: bool(p.reduceMotion, false),
       onboarded: bool(p.onboarded, false),

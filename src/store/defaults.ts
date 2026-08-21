@@ -1,7 +1,7 @@
-import type { AccentKey, State, Vault } from '@/domain/types'
+import type { GlyphName, State, TypeKey, Vault } from '@/domain/types'
 import { todayISO } from '@/domain/dates'
 
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 export const STORAGE_KEY = 'hoard.state'
 
 export function newId(prefix = ''): string {
@@ -33,8 +33,10 @@ export function initialState(): State {
       currency,
       locale,
       monthlyTarget: 0,
-      theme: 'midnight',
-      unlockedThemes: ['midnight'],
+      weeklyLimit: 0,
+      theme: 'field',
+      unlockedThemes: ['field'],
+      appearance: 'system',
       sound: true,
       reduceMotion: false,
       onboarded: false,
@@ -53,10 +55,10 @@ export function initialState(): State {
 
 export type VaultDraft = {
   name: string
-  emoji: string
+  glyph: GlyphName
+  type: TypeKey
   target: number | null
   deadline: string | null
-  color: AccentKey
   note?: string
 }
 
@@ -64,10 +66,10 @@ export function makeVault(draft: VaultDraft, today = todayISO()): Vault {
   return {
     id: newId('v_'),
     name: draft.name.trim() || 'Untitled vault',
-    emoji: draft.emoji || '🎯',
+    glyph: draft.glyph,
+    type: draft.type,
     target: draft.target && draft.target > 0 ? Math.round(draft.target) : null,
     deadline: draft.deadline || null,
-    color: draft.color,
     createdAt: today,
     completedAt: null,
     archived: false,
@@ -77,17 +79,17 @@ export function makeVault(draft: VaultDraft, today = todayISO()): Vault {
 
 /** Starter vaults offered during onboarding and from the empty state. */
 export const VAULT_PRESETS: Array<VaultDraft & { blurb: string; monthsOut?: number; fixedDeadline?: string }> = [
-  { name: 'Christmas',      emoji: '🎄', target: 50_000,  deadline: null, color: 'rose',   blurb: 'Presents, food, the lot', fixedDeadline: '12-20' },
-  { name: 'Emergency fund', emoji: '🛟', target: 100_000, deadline: null, color: 'teal',   blurb: 'The one that lets you sleep' },
-  { name: 'Trip',           emoji: '✈️', target: 150_000, deadline: null, color: 'azure',  blurb: 'Somewhere warm',      monthsOut: 8 },
-  { name: 'New phone',      emoji: '📱', target: 90_000,  deadline: null, color: 'violet', blurb: 'Before this one dies', monthsOut: 6 },
-  { name: 'Car',            emoji: '🚗', target: 400_000, deadline: null, color: 'gold',   blurb: 'Four wheels of freedom', monthsOut: 18 },
-  { name: 'Concert',        emoji: '🎫', target: 25_000,  deadline: null, color: 'lime',   blurb: 'Tickets and a night out', monthsOut: 4 },
+  { name: 'Christmas',      glyph: 'gift',  type: 'flare', target: 50_000,  deadline: null, blurb: 'Presents, food, the lot', fixedDeadline: '12-20' },
+  { name: 'Emergency fund', glyph: 'wave',  type: 'frost', target: 100_000, deadline: null, blurb: 'The one that lets you sleep' },
+  { name: 'Trip',           glyph: 'plane', type: 'wave',  target: 150_000, deadline: null, blurb: 'Somewhere warm',          monthsOut: 8 },
+  { name: 'New phone',      glyph: 'phone', type: 'leaf',  target: 90_000,  deadline: null, blurb: 'Before this one dies',    monthsOut: 6 },
+  { name: 'Car',            glyph: 'car',   type: 'volt',  target: 400_000, deadline: null, blurb: 'Four wheels of freedom',  monthsOut: 18 },
+  { name: 'Concert',        glyph: 'ticket', type: 'bloom', target: 25_000, deadline: null, blurb: 'Tickets and a night out', monthsOut: 4 },
 ]
 
-export const ACCENTS: AccentKey[] = ['gold', 'ember', 'rose', 'violet', 'azure', 'teal', 'lime', 'slate']
+export const TYPE_KEYS: TypeKey[] = ['wave', 'ember', 'leaf', 'volt', 'bloom', 'moss', 'frost', 'flare']
 
-export const EMOJI_CHOICES = [
-  '🎯', '🎄', '🛟', '✈️', '📱', '🚗', '🎫', '🏠', '🎓', '💍', '🎁', '🏝️',
-  '🎮', '💻', '🚲', '🛠️', '🐕', '👟', '📷', '🎸', '🏋️', '🍜', '🎨', '⛺',
-]
+export const TYPE_LABEL: Record<TypeKey, string> = {
+  wave: 'Wave', ember: 'Ember', leaf: 'Leaf', volt: 'Volt',
+  bloom: 'Bloom', moss: 'Moss', frost: 'Frost', flare: 'Flare',
+}

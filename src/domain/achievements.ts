@@ -1,8 +1,11 @@
 import type { Cents, Entry, ISODate, Vault } from './types'
 import { addMonths, daysBetween, isoWeekKey, monthEnd, monthKey } from './dates'
 import type { StreakInfo } from './streak'
+import type { BudgetView } from './budget'
+import { weeksUnderLimit } from './budget'
 import type { Records } from './stats'
 import { clamp01 } from './money'
+import type { BadgeShape } from '@/ui/Badge'
 
 /**
  * Badges. Each one is a pure predicate over a pre-computed facts object, plus an
@@ -40,6 +43,8 @@ export type AchFacts = {
   records: Records
   monthlyNet: Map<string, Cents>
   monthlyTarget: Cents
+  weeklyLimit: Cents
+  budget: BudgetView
   level: number
   claimedQuestCount: number
   activeVaultCount: number
@@ -49,7 +54,8 @@ export type Achievement = {
   id: string
   name: string
   description: string
-  icon: string
+  /** Shape carries the kind of feat; the tier ring carries how hard it was. */
+  shape: BadgeShape
   family: AchFamily
   xp: number
   /** 1 = bronze, 2 = silver, 3 = gold. Drives the ring colour. */
@@ -114,18 +120,18 @@ function hourOfEntry(e: Entry): number {
   return new Date(e.createdAt).getHours()
 }
 
-function volume(id: string, name: string, icon: string, amount: number, xp: number, tier: 1 | 2 | 3): Achievement {
+function volume(id: string, name: string, amount: number, xp: number, tier: 1 | 2 | 3): Achievement {
   return {
-    id, name, icon, family: 'volume', xp, tier,
+    id, name, shape: 'diamond', family: 'volume', xp, tier,
     description: `Put aside ${amount.toLocaleString()} in total.`,
     test: (f) => f.totalDeposited >= money(amount),
     progress: (f) => clamp01(f.totalDeposited / money(amount)),
   }
 }
 
-function streakBadge(id: string, name: string, icon: string, weeks: number, xp: number, tier: 1 | 2 | 3): Achievement {
+function streakBadge(id: string, name: string, weeks: number, xp: number, tier: 1 | 2 | 3): Achievement {
   return {
-    id, name, icon, family: 'consistency', xp, tier,
+    id, name, shape: 'flame', family: 'consistency', xp, tier,
     description: `Keep a ${weeks}-week saving streak alive.`,
     test: (f) => f.streak.longest >= weeks,
     progress: (f) => clamp01(f.streak.longest / weeks),
@@ -135,59 +141,59 @@ function streakBadge(id: string, name: string, icon: string, weeks: number, xp: 
 export const ACHIEVEMENTS: Achievement[] = [
   /* ---------------------------------------------------------- first steps */
   {
-    id: 'first_deposit', name: 'First Coin', icon: '🪙', family: 'first', xp: 25, tier: 1,
+    id: 'first_deposit', name: 'First Coin', shape: 'drop', family: 'first', xp: 25, tier: 1,
     description: 'Log your very first deposit.',
     test: (f) => f.deposits.length >= 1,
   },
   {
-    id: 'first_vault', name: 'Ground Broken', icon: '⛏️', family: 'first', xp: 25, tier: 1,
+    id: 'first_vault', name: 'Ground Broken', shape: 'chevron', family: 'first', xp: 25, tier: 1,
     description: 'Create your first vault.',
     test: (f) => f.vaults.length >= 1,
   },
   {
-    id: 'ten_deposits', name: 'Getting the Hang', icon: '🎯', family: 'first', xp: 50, tier: 1,
+    id: 'ten_deposits', name: 'Getting the Hang', shape: 'hex', family: 'first', xp: 50, tier: 1,
     description: 'Log 10 deposits.',
     test: (f) => f.deposits.length >= 10,
     progress: (f) => clamp01(f.deposits.length / 10),
   },
   {
-    id: 'first_complete', name: 'Vault Cracked', icon: '🗝️', family: 'first', xp: 150, tier: 2,
+    id: 'first_complete', name: 'Vault Cracked', shape: 'ring', family: 'first', xp: 150, tier: 2,
     description: 'Fill a vault all the way to its target.',
     test: (f) => f.completedVaults.length >= 1,
   },
 
   /* --------------------------------------------------------------- volume */
-  volume('vol_100', 'Pocket Change', '💵', 100, 50, 1),
-  volume('vol_500', 'Serious Now', '💸', 500, 75, 1),
-  volume('vol_1k', 'Four Figures', '🏦', 1_000, 100, 2),
-  volume('vol_5k', 'Small Hoard', '💰', 5_000, 200, 2),
-  volume('vol_10k', 'Real Money', '🪩', 10_000, 300, 3),
-  volume('vol_25k', 'Dragon Wealth', '🐲', 25_000, 500, 3),
+  volume('vol_100', 'Pocket Change', 100, 50, 1),
+  volume('vol_500', 'Serious Now', 500, 75, 1),
+  volume('vol_1k', 'Four Figures', 1_000, 100, 2),
+  volume('vol_5k', 'Small Hoard', 5_000, 200, 2),
+  volume('vol_10k', 'Real Money', 10_000, 300, 3),
+  volume('vol_25k', 'Dragon Wealth', 25_000, 500, 3),
 
   /* ---------------------------------------------------------- consistency */
-  streakBadge('streak_4', 'Month of Mondays', '📅', 4, 100, 1),
-  streakBadge('streak_12', 'One Quarter Down', '🗓️', 12, 200, 2),
-  streakBadge('streak_26', 'Half a Year', '🌗', 26, 350, 3),
-  streakBadge('streak_52', 'Year of the Wyrm', '🐉', 52, 500, 3),
+  streakBadge('streak_4', 'Month of Mondays', 4, 100, 1),
+  streakBadge('streak_12', 'One Quarter Down', 12, 200, 2),
+  streakBadge('streak_26', 'Half a Year', 26, 350, 3),
+  streakBadge('streak_52', 'Year of the Wyrm', 52, 500, 3),
   {
-    id: 'days_30', name: 'Thirty Days', icon: '🌤️', family: 'consistency', xp: 100, tier: 1,
+    id: 'days_30', name: 'Thirty Days', shape: 'hex', family: 'consistency', xp: 100, tier: 1,
     description: 'Save on 30 different days.',
     test: (f) => f.streak.activeDays >= 30,
     progress: (f) => clamp01(f.streak.activeDays / 30),
   },
   {
-    id: 'days_100', name: 'Century of Days', icon: '💯', family: 'consistency', xp: 300, tier: 3,
+    id: 'days_100', name: 'Century of Days', shape: 'hex', family: 'consistency', xp: 300, tier: 3,
     description: 'Save on 100 different days.',
     test: (f) => f.streak.activeDays >= 100,
     progress: (f) => clamp01(f.streak.activeDays / 100),
   },
   {
-    id: 'perfect_week', name: 'Perfect Week', icon: '✨', family: 'consistency', xp: 250, tier: 3,
+    id: 'perfect_week', name: 'Perfect Week', shape: 'star', family: 'consistency', xp: 250, tier: 3,
     description: 'Deposit on all seven days of one week.',
     test: hasPerfectWeek,
   },
   {
-    id: 'freeze_saved', name: 'Saved by the Ice', icon: '❄️', family: 'consistency', xp: 50, tier: 1,
+    id: 'freeze_saved', name: 'Saved by the Ice', shape: 'drop', family: 'consistency', xp: 50, tier: 1,
     hidden: true,
     description: 'Have a streak freeze rescue a week you missed.',
     test: (f) => f.streak.frozenWeeks.length >= 1,
@@ -195,35 +201,58 @@ export const ACHIEVEMENTS: Achievement[] = [
 
   /* ----------------------------------------------------------- discipline */
   {
-    id: 'clean_month', name: 'Untouched', icon: '🛡️', family: 'discipline', xp: 150, tier: 2,
+    id: 'clean_month', name: 'Untouched', shape: 'shield', family: 'discipline', xp: 150, tier: 2,
     description: 'Complete a calendar month with deposits and no withdrawals.',
     test: hasCleanMonth,
   },
   {
-    id: 'vaults_3', name: 'Collector', icon: '🏺', family: 'discipline', xp: 250, tier: 2,
+    id: 'vaults_3', name: 'Collector', shape: 'ring', family: 'discipline', xp: 250, tier: 2,
     description: 'Finish three vaults.',
     test: (f) => f.completedVaults.length >= 3,
     progress: (f) => clamp01(f.completedVaults.length / 3),
   },
   {
-    id: 'target_hit', name: 'On Target', icon: '🎪', family: 'discipline', xp: 100, tier: 1,
+    id: 'target_hit', name: 'On Target', shape: 'chevron', family: 'discipline', xp: 100, tier: 1,
     description: 'Hit your monthly target for a full month.',
     test: (f) => consecutiveTargetMonths(f) >= 1,
   },
   {
-    id: 'target_3', name: 'Three in a Row', icon: '🔱', family: 'discipline', xp: 300, tier: 3,
+    id: 'target_3', name: 'Three in a Row', shape: 'chevron', family: 'discipline', xp: 300, tier: 3,
     description: 'Hit your monthly target three months running.',
     test: (f) => consecutiveTargetMonths(f) >= 3,
     progress: (f) => clamp01(consecutiveTargetMonths(f) / 3),
   },
   {
-    id: 'multivault', name: 'Many Fronts', icon: '🗂️', family: 'discipline', xp: 100, tier: 1,
+    id: 'budget_set', name: 'Drawing the Line', shape: 'shield', family: 'first', xp: 25, tier: 1,
+    description: 'Set yourself a weekly spending limit.',
+    test: (f) => f.weeklyLimit > 0,
+  },
+  {
+    id: 'budget_4', name: 'Four Weeks Clean', shape: 'shield', family: 'discipline', xp: 150, tier: 2,
+    description: 'Finish four weeks at or under your spending limit.',
+    test: (f) => weeksUnderLimit(f.entries, f.weeklyLimit, f.today) >= 4,
+    progress: (f) => clamp01(weeksUnderLimit(f.entries, f.weeklyLimit, f.today) / 4),
+  },
+  {
+    id: 'budget_12', name: 'Iron Budget', shape: 'shield', family: 'discipline', xp: 350, tier: 3,
+    description: 'Finish twelve weeks at or under your spending limit.',
+    test: (f) => weeksUnderLimit(f.entries, f.weeklyLimit, f.today) >= 12,
+    progress: (f) => clamp01(weeksUnderLimit(f.entries, f.weeklyLimit, f.today) / 12),
+  },
+  {
+    id: 'budget_streak_6', name: 'Six Straight', shape: 'bolt', family: 'discipline', xp: 250, tier: 3,
+    description: 'Six weeks in a row under the limit, without a break.',
+    test: (f) => f.budget.streak >= 6,
+    progress: (f) => clamp01(f.budget.streak / 6),
+  },
+  {
+    id: 'multivault', name: 'Many Fronts', shape: 'gear', family: 'discipline', xp: 100, tier: 1,
     description: 'Keep five vaults running at once.',
     test: (f) => f.activeVaultCount >= 5,
     progress: (f) => clamp01(f.activeVaultCount / 5),
   },
   {
-    id: 'quest_25', name: 'Quest Runner', icon: '📜', family: 'discipline', xp: 200, tier: 2,
+    id: 'quest_25', name: 'Quest Runner', shape: 'gear', family: 'discipline', xp: 200, tier: 2,
     description: 'Claim 25 quest rewards.',
     test: (f) => f.claimedQuestCount >= 25,
     progress: (f) => clamp01(f.claimedQuestCount / 25),
@@ -231,55 +260,55 @@ export const ACHIEVEMENTS: Achievement[] = [
 
   /* ---------------------------------------------------------------- story */
   {
-    id: 'ontime', name: 'Beat the Clock', icon: '⏱️', family: 'story', xp: 150, tier: 2,
+    id: 'ontime', name: 'Beat the Clock', shape: 'bolt', family: 'story', xp: 150, tier: 2,
     description: 'Complete a vault on or before its deadline.',
     test: (f) => f.completedVaults.some(
       (v) => v.deadline != null && v.reachedAt != null && v.reachedAt <= v.deadline),
   },
   {
-    id: 'christmas', name: 'Christmas Delivered', icon: '🎄', family: 'story', xp: 200, tier: 3,
+    id: 'christmas', name: 'Christmas Delivered', shape: 'star', family: 'story', xp: 200, tier: 3,
     description: 'Finish a December-dated vault before the day.',
     test: (f) => f.completedVaults.some(
       (v) => v.deadline != null && v.deadline.slice(5, 7) === '12' &&
              v.reachedAt != null && v.reachedAt <= v.deadline),
   },
   {
-    id: 'overachiever', name: 'Overachiever', icon: '🚀', family: 'story', xp: 200, tier: 2,
+    id: 'overachiever', name: 'Overachiever', shape: 'chevron', family: 'story', xp: 200, tier: 2,
     description: 'Finish a month at 150% of your target.',
     test: (f) => f.monthlyTarget > 0 &&
       completedMonths(f).some((k) => (f.monthlyNet.get(k) ?? 0) >= f.monthlyTarget * 1.5),
   },
   {
-    id: 'comeback', name: 'The Return', icon: '🔥', family: 'story', xp: 100, tier: 2, hidden: true,
+    id: 'comeback', name: 'The Return', shape: 'flame', family: 'story', xp: 100, tier: 2, hidden: true,
     description: 'Come back and deposit after three weeks away.',
     test: (f) => longestGapBeforeDeposit(f) >= 21,
   },
   {
-    id: 'big_one', name: "Dragon's Portion", icon: '💎', family: 'story', xp: 150, tier: 2,
+    id: 'big_one', name: "Dragon's Portion", shape: 'diamond', family: 'story', xp: 150, tier: 2,
     description: 'Land one deposit worth five times your average.',
     test: (f) => f.deposits.length >= 10 && f.records.averageDeposit > 0 &&
       (f.records.biggestSingle?.amount ?? 0) >= f.records.averageDeposit * 5,
   },
   {
-    id: 'night_owl', name: 'Night Owl', icon: '🦉', family: 'story', xp: 25, tier: 1, hidden: true,
+    id: 'night_owl', name: 'Night Owl', shape: 'ring', family: 'story', xp: 25, tier: 1, hidden: true,
     description: 'Log a deposit between midnight and 5am.',
     test: (f) => f.deposits.some((e) => hourOfEntry(e) < 5),
   },
   {
-    id: 'early_bird', name: 'Early Bird', icon: '🐦', family: 'story', xp: 25, tier: 1, hidden: true,
+    id: 'early_bird', name: 'Early Bird', shape: 'ring', family: 'story', xp: 25, tier: 1, hidden: true,
     description: 'Log a deposit before 6am.',
     test: (f) => f.deposits.some((e) => { const h = hourOfEntry(e); return h >= 5 && h < 6 }),
   },
 
   /* ------------------------------------------------- prestige (0 XP, see note) */
   {
-    id: 'rank_vaultkeeper', name: 'Vaultkeeper', icon: '🔐', family: 'story', xp: 0, tier: 2,
+    id: 'rank_vaultkeeper', name: 'Vaultkeeper', shape: 'hex', family: 'story', xp: 0, tier: 2,
     description: 'Reach level 10.',
     test: (f) => f.level >= 10,
     progress: (f) => clamp01(f.level / 10),
   },
   {
-    id: 'rank_drakelord', name: 'Drakelord', icon: '🐉', family: 'story', xp: 0, tier: 3,
+    id: 'rank_drakelord', name: 'Drakelord', shape: 'hex', family: 'story', xp: 0, tier: 3,
     description: 'Reach level 28.',
     test: (f) => f.level >= 28,
     progress: (f) => clamp01(f.level / 28),

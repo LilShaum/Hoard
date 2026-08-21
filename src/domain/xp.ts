@@ -58,23 +58,27 @@ export function levelForXp(xp: number): LevelInfo {
 export type Rank = {
   key: string
   name: string
-  sigil: string
   minLevel: number
-  /** Theme unlocked on reaching this rank. */
+  /** Accent theme unlocked on reaching this rank. */
   theme: ThemeKey
   blurb: string
 }
 
+/**
+ * The player's rank. Distinct from the companion's evolution line: you rank up,
+ * and your companion evolves on its own schedule — two ladders that reward
+ * different lengths of commitment.
+ */
 export const RANKS: Rank[] = [
-  { key: 'wyrmling',    name: 'Wyrmling',    sigil: '🥚', minLevel: 1,  theme: 'midnight',   blurb: 'Every hoard starts with one coin.' },
-  { key: 'coinsprite',  name: 'Coin Sprite', sigil: '✨', minLevel: 3,  theme: 'emberlight', blurb: 'Small, quick, and already collecting.' },
-  { key: 'hoarder',     name: 'Hoarder',     sigil: '🪙', minLevel: 6,  theme: 'deepsea',    blurb: 'The habit has teeth now.' },
-  { key: 'vaultkeeper', name: 'Vaultkeeper', sigil: '🔐', minLevel: 10, theme: 'verdant',    blurb: 'You keep what you catch.' },
-  { key: 'gilded',      name: 'Gilded',      sigil: '🏅', minLevel: 15, theme: 'royal',      blurb: 'Consistency is starting to shine.' },
-  { key: 'treasurer',   name: 'Treasurer',   sigil: '💎', minLevel: 21, theme: 'ice',        blurb: 'You do not spend what you have not decided to spend.' },
-  { key: 'drakelord',   name: 'Drakelord',   sigil: '🐉', minLevel: 28, theme: 'dragonfire', blurb: 'The pile has a shape. And a guard.' },
-  { key: 'goldwyrm',    name: 'Goldwyrm',    sigil: '👑', minLevel: 36, theme: 'aurum',      blurb: 'Saving is no longer something you try to do.' },
-  { key: 'elderwyrm',   name: 'Elder Wyrm',  sigil: '🌟', minLevel: 45, theme: 'void',       blurb: 'Legendary. Genuinely.' },
+  { key: 'novice',   name: 'Novice',      minLevel: 1,  theme: 'field', blurb: 'Every hoard starts with one coin.' },
+  { key: 'forager',  name: 'Forager',     minLevel: 3,  theme: 'leaf',  blurb: 'Small, quick, and already collecting.' },
+  { key: 'keeper',   name: 'Keeper',      minLevel: 6,  theme: 'wave',  blurb: 'The habit has teeth now.' },
+  { key: 'warden',   name: 'Warden',      minLevel: 10, theme: 'volt',  blurb: 'You keep what you catch.' },
+  { key: 'ranger',   name: 'Ranger',      minLevel: 15, theme: 'ember', blurb: 'Consistency is starting to show.' },
+  { key: 'adept',    name: 'Adept',       minLevel: 21, theme: 'frost', blurb: 'You do not spend what you have not decided to spend.' },
+  { key: 'curator',  name: 'Curator',     minLevel: 28, theme: 'flare', blurb: 'The pile has a shape. And a guard.' },
+  { key: 'master',   name: 'Vaultmaster', minLevel: 36, theme: 'bloom', blurb: 'Saving is no longer something you try to do.' },
+  { key: 'grand',    name: 'Grandkeeper', minLevel: 45, theme: 'moss',  blurb: 'Legendary. Genuinely.' },
 ]
 
 export function rankForLevel(level: number): Rank {

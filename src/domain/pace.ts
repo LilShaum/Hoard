@@ -1,6 +1,7 @@
 import type { Cents, Entry, ISODate, Vault } from './types'
 import { addDays, daysBetween, isoWeekKey, todayISO, weekStart } from './dates'
 import { VELOCITY_WEEKS } from './streak'
+import { signed } from './stats'
 
 /**
  * The pace engine — the reason this app exists.
@@ -62,9 +63,8 @@ export function velocityPerWeek(
 
   const byWeek = new Map<string, number>()
   for (const e of entries) {
-    const signed = e.kind === 'deposit' ? e.amount : -e.amount
     const key = isoWeekKey(e.date)
-    byWeek.set(key, (byWeek.get(key) ?? 0) + signed)
+    byWeek.set(key, (byWeek.get(key) ?? 0) + signed(e))
   }
 
   let weighted = 0

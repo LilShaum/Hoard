@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 
-export type Toast = { id: number; icon: string; text: string; xp?: number }
+export type Toast = { id: number; text: string; xp?: number }
 
 let items: Toast[] = []
 let nextId = 1
@@ -13,8 +13,8 @@ const snapshot = () => items
 const TTL = 2800
 const MAX = 3
 
-export function toast(text: string, icon = '✨', xp?: number): void {
-  const t: Toast = { id: nextId++, icon, text, xp }
+export function toast(text: string, xp?: number): void {
+  const t: Toast = { id: nextId++, text, xp }
   items = [...items, t].slice(-MAX)
   emit()
   setTimeout(() => {
@@ -30,7 +30,6 @@ export function ToastHost() {
     <div className="toasts" role="status" aria-live="polite">
       {list.map((t) => (
         <div className="toast" key={t.id}>
-          <span className="toast__icon" aria-hidden>{t.icon}</span>
           <span className="grow">{t.text}</span>
           {t.xp != null && <span className="toast__xp">+{t.xp} XP</span>}
         </div>

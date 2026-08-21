@@ -98,7 +98,7 @@ describe('migrate', () => {
 describe('export and import', () => {
   it('round-trips losslessly', () => {
     let s = base()
-    s = reducer(s, addVault({ name: 'Christmas', emoji: '🎄', target: 50_000, deadline: '2026-12-20', color: 'rose' }))
+    s = reducer(s, addVault({ name: 'Christmas', glyph: 'gift', type: 'flare', target: 50_000, deadline: '2026-12-20' }))
     s = reducer(s, addEntry({ amount: 2_500, vaultId: s.vaults[0].id, date: '2026-08-01', note: 'Payday' }))
     s = reducer(s, { type: 'quest/claim', id: '2026-W34:weekly:days', date: '2026-08-21' })
 

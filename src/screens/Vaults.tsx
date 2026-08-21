@@ -8,6 +8,10 @@ import type { Route } from '@/app/router'
 
 type Filter = 'active' | 'done' | 'archived'
 
+const FILTERS: Array<[Filter, string]> = [
+  ['active', 'Active'], ['done', 'Complete'], ['archived', 'Archived'],
+]
+
 export function Vaults({ navigate }: { navigate: (r: Route) => void }) {
   const d = useHoard()
   const fmt = useFormat()
@@ -20,47 +24,44 @@ export function Vaults({ navigate }: { navigate: (r: Route) => void }) {
     archived: d.archivedVaults,
   }
   const list = lists[filter]
-  const totalInVaults = d.vaults
-    .filter((v) => !v.archived)
-    .reduce((n, v) => n + v.saved, 0)
+  const inVaults = d.vaults.filter((v) => !v.archived).reduce((n, v) => n + v.saved, 0)
 
   return (
     <div className="stack stack--lg">
-      <section className="card card--pad-lg">
-        <div className="row row--between">
-          <div>
-            <p className="tiny faint">Across {d.activeVaults.length + d.completedVaults.length} vaults</p>
-            <p className="hero__total hero__total--sm money">{fmt.money(totalInVaults)}</p>
-          </div>
-          <button className="btn btn--primary btn--sm" onClick={() => setCreating(true)}>
-            <IconPlus size={16} /> New
+      <section className="panel">
+        <header className="panel__head">
+          <span className="label">Held in vaults</span>
+          <button className="btn btn--sm" onClick={() => setCreating(true)}>
+            <IconPlus size={14} /> New vault
           </button>
+        </header>
+        <div className="panel__body">
+          <p className="num--hero hoard__total">{fmt.money(inVaults)}</p>
+          <p className="tiny faint">
+            Across {d.activeVaults.length + d.completedVaults.length}{' '}
+            {d.activeVaults.length + d.completedVaults.length === 1 ? 'vault' : 'vaults'}
+          </p>
         </div>
         {d.generalSaved > 0 && (
-          <button className="btn btn--bare tiny faint" onClick={() => navigate({ name: 'activity' })}>
-            Plus {fmt.money(d.generalSaved)} in the general hoard, not tied to a vault →
-          </button>
+          <footer className="panel__foot">
+            <button className="btn btn--link" onClick={() => navigate({ name: 'activity' })}>
+              Plus {fmt.money(d.generalSaved)} in the general hoard
+            </button>
+          </footer>
         )}
       </section>
 
-      <div className="row row--tight row--wrap">
-        {([['active', 'Active'], ['done', 'Complete'], ['archived', 'Archived']] as const).map(
-          ([key, label]) => (
-            <button
-              key={key}
-              className="chip"
-              aria-pressed={filter === key}
-              onClick={() => setFilter(key)}
-            >
-              {label} {lists[key].length > 0 && <span className="faint">{lists[key].length}</span>}
-            </button>
-          ),
-        )}
+      <div className="seg seg--wrap" role="group" aria-label="Filter vaults">
+        {FILTERS.map(([key, label]) => (
+          <button key={key} className="seg__opt" aria-pressed={filter === key}
+                  onClick={() => setFilter(key)}>
+            {label} <span className="num faint">{lists[key].length}</span>
+          </button>
+        ))}
       </div>
 
       {list.length === 0 ? (
-        <div className="card empty">
-          <span className="empty__icon" aria-hidden>{filter === 'active' ? '🗝️' : filter === 'done' ? '🏆' : '📦'}</span>
+        <div className="panel empty">
           <p className="empty__title">
             {filter === 'active' ? 'No vaults on the go'
               : filter === 'done' ? 'Nothing finished yet'
@@ -68,7 +69,7 @@ export function Vaults({ navigate }: { navigate: (r: Route) => void }) {
           </p>
           <p className="small">
             {filter === 'active'
-              ? 'A vault is one thing you are saving for. Give it a target and a date and the app will tell you if you are on track.'
+              ? 'A vault is one thing you are saving for. Give it a target and a date and Hoard works out what you need each week.'
               : filter === 'done'
                 ? 'Fill a vault to its target and it lands here.'
                 : 'Vaults you archive are kept here with their history intact.'}
@@ -80,12 +81,10 @@ export function Vaults({ navigate }: { navigate: (r: Route) => void }) {
           )}
         </div>
       ) : (
-        <div className="stack stack--md">
-          {list.map((v, i) => (
-            <div key={v.id} className="rise" style={{ animationDelay: `${i * 35}ms` }}>
-              <VaultCard vault={v} money={fmt.money}
-                         onOpen={() => navigate({ name: 'vault', vaultId: v.id })} />
-            </div>
+        <div className="stack stack--sm">
+          {list.map((v) => (
+            <VaultCard key={v.id} vault={v} money={fmt.money}
+                       onOpen={() => navigate({ name: 'vault', vaultId: v.id })} />
           ))}
         </div>
       )}

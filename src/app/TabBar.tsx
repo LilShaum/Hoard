@@ -4,7 +4,7 @@ import { TABS, type Tab } from './router'
 const META: Record<Tab, { label: string; Icon: (p: { size?: number }) => JSX.Element }> = {
   home: { label: 'Home', Icon: IconHome },
   vaults: { label: 'Vaults', Icon: IconVault },
-  quests: { label: 'Quests', Icon: IconQuest },
+  quests: { label: 'Goals', Icon: IconQuest },
   progress: { label: 'Progress', Icon: IconChart },
   profile: { label: 'You', Icon: IconUser },
 }

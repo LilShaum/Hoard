@@ -2,7 +2,7 @@ import type { Cents, Entry, ISODate, Vault } from './types'
 import {
   addDays, isoWeekKey, monthEnd, monthKey, monthStart, weekEnd, weekStart,
 } from './dates'
-import { depositsOf, netOf } from './stats'
+import { depositsOf, netOf, spendOf } from './stats'
 import { seeded, shuffle } from './rng'
 import { XP_QUEST } from './xp'
 
@@ -42,6 +42,7 @@ export type QuestContext = {
   entries: Entry[]
   vaults: Vault[]
   monthlyTarget: Cents
+  weeklyLimit: Cents
   claimed: Record<string, ISODate>
 }
 
@@ -120,6 +121,20 @@ function dailyPool(ctx: QuestContext, base: Cents): Built[] {
   ]
 }
 
+/** Only offered once a weekly limit exists — otherwise there is nothing to beat. */
+function dailyBudgetQuest(ctx: QuestContext): Built | null {
+  if (ctx.weeklyLimit <= 0) return null
+  const cap = Math.round(ctx.weeklyLimit / 7)
+  const spentToday = spendOf(ctx.entries.filter((e) => e.date === ctx.today))
+  return {
+    kind: 'under_day', title: 'Hold the line',
+    detail: `Keep today's spending under ${'{money}'}.`,
+    // Inverted: progress is "how much of the day you got through under the cap",
+    // and it only completes once the day is done or the cap survives.
+    unit: 'money', target: cap, progress: spentToday <= cap ? cap : 0,
+  }
+}
+
 /* ----------------------------------------------------------------- weekly */
 
 function weeklyPool(ctx: QuestContext, base: Cents): Built[] {
@@ -166,6 +181,21 @@ function weeklyPool(ctx: QuestContext, base: Cents): Built[] {
       unit: 'money', target: niceMoney(Math.round(base * 0.6)), progress: biggest,
     },
   ]
+}
+
+function weeklyBudgetQuest(ctx: QuestContext): Built | null {
+  if (ctx.weeklyLimit <= 0) return null
+  const from = weekStart(ctx.today)
+  const to = weekEnd(ctx.today)
+  const spent = spendOf(ctx.entries.filter((e) => inRange(e, from, to)))
+  const daysGone = Math.min(7, Math.max(0, Math.round((Date.parse(ctx.today) - Date.parse(from)) / 86400000) + 1))
+  return {
+    kind: 'under_week', title: 'Under the limit',
+    detail: `Finish the week having spent no more than ${'{money}'}.`,
+    // Credit accrues a day at a time and resets the moment the cap is broken.
+    unit: 'count', target: 7,
+    progress: spent > ctx.weeklyLimit ? 0 : daysGone,
+  }
 }
 
 /* ---------------------------------------------------------------- monthly */
@@ -236,12 +266,16 @@ export function generateQuests(ctx: QuestContext): Quest[] {
   const wkKey = isoWeekKey(ctx.today)
   const moKey = monthKey(ctx.today)
 
+  const dailyBudget = dailyBudgetQuest(ctx)
   const daily = shuffle(dailyPool(ctx, base), seeded(`d:${dayKey}`))
     .slice(0, QUEST_COUNT.daily)
+    .concat(dailyBudget ? [dailyBudget] : [])
     .map((b) => build(b, 'daily', dayKey, ctx.today, ctx.claimed))
 
+  const weeklyBudget = weeklyBudgetQuest(ctx)
   const weekly = shuffle(weeklyPool(ctx, base), seeded(`w:${wkKey}`))
     .slice(0, QUEST_COUNT.weekly)
+    .concat(weeklyBudget ? [weeklyBudget] : [])
     .map((b) => build(b, 'weekly', wkKey, weekEnd(ctx.today), ctx.claimed))
 
   // The monthly target always shows; the second slot rotates.
