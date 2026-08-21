@@ -5,6 +5,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 /** Inlines the whole app into one self-contained HTML file. */
 export default defineConfig({
+  base: './',
   plugins: [react(), viteSingleFile({ removeViteModuleLoader: true })],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
