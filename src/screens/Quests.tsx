@@ -5,7 +5,7 @@ import { QuestRow, Notch, Meter, Status } from '@/ui/parts'
 import { Sheet } from '@/ui/Sheet'
 import { parseAmount } from '@/domain/money'
 import { niceMoney } from '@/domain/quests'
-import { todayISO } from '@/domain/dates'
+import { plural, todayISO } from '@/domain/dates'
 import { BUDGET_LABEL } from '@/domain/budget'
 import type { QuestTier } from '@/domain/quests'
 import { toast } from '@/ui/toast'
@@ -92,7 +92,7 @@ export function Quests() {
                 </span>
               </div>
               <p className="tiny faint">
-                {d.month.daysLeft} days left.{' '}
+                {plural(d.month.daysLeft, 'day')} left.{' '}
                 {d.month.hit
                   ? 'Everything from here is a bonus.'
                   : `About ${fmt.money(Math.ceil(d.month.remaining / Math.max(1, d.month.daysLeft)))} a day gets you there.`}
@@ -135,7 +135,9 @@ export function Quests() {
               <p className="tiny faint">
                 {fmt.money(d.budget.safePerDay)} a day is safe for the {d.budget.daysLeft}{' '}
                 {d.budget.daysLeft === 1 ? 'day' : 'days'} left in the week.
-                {d.budget.streak > 0 && ` ${d.budget.streak} weeks running under it.`}
+                {d.budget.streak > 0 && (
+                  ` ${d.budget.streak} ${d.budget.streak === 1 ? 'week' : 'weeks'} running under it.`
+                )}
               </p>
             </>
           ) : (

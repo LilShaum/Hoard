@@ -45,17 +45,22 @@ jobs:
       - name: Unit tests
         run: npm test
 
-      - name: Configure Pages
-        id: pages
-        uses: actions/configure-pages@v5
-        with:
-          # Turns Pages on for the repository if it is not already enabled.
-          enablement: true
-
+      # The sub-path is just the repository name, so it is derived here rather
+      # than taken from configure-pages. That keeps the build — and the tests
+      # above it — meaningful even before Pages has been switched on.
       - name: Build
         run: npm run build
         env:
-          PAGES_BASE: ${{ steps.pages.outputs.base_path }}
+          PAGES_BASE: /${{ github.event.repository.name }}/
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          # A no-op once Pages is on. It cannot switch Pages on by itself
+          # unless the repository allows the Actions token to do so — if this
+          # step fails with "Resource not accessible by integration", enable
+          # Pages once by hand: Settings -> Pages -> Source: GitHub Actions.
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:

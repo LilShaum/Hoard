@@ -121,17 +121,21 @@ function dailyPool(ctx: QuestContext, base: Cents): Built[] {
   ]
 }
 
-/** Only offered once a weekly limit exists — otherwise there is nothing to beat. */
+/**
+ * Only offered once a weekly limit exists — otherwise there is nothing to hold.
+ *
+ * Note this rewards *logging*, not staying under a daily figure. A quest that
+ * completes the moment you have not yet overspent is claimable at 9am and then
+ * exploitable all afternoon; the weekly version below is the one that actually
+ * has to survive to the end of the period.
+ */
 function dailyBudgetQuest(ctx: QuestContext): Built | null {
   if (ctx.weeklyLimit <= 0) return null
-  const cap = Math.round(ctx.weeklyLimit / 7)
-  const spentToday = spendOf(ctx.entries.filter((e) => e.date === ctx.today))
+  const logged = ctx.entries.filter((e) => e.date === ctx.today && e.kind === 'spend')
   return {
-    kind: 'under_day', title: 'Hold the line',
-    detail: `Keep today's spending under ${'{money}'}.`,
-    // Inverted: progress is "how much of the day you got through under the cap",
-    // and it only completes once the day is done or the cap survives.
-    unit: 'money', target: cap, progress: spentToday <= cap ? cap : 0,
+    kind: 'log_spend', title: 'Keep the books',
+    detail: 'Log what you spent today.',
+    unit: 'count', target: 1, progress: Math.min(1, logged.length),
   }
 }
 

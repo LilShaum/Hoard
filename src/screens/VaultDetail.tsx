@@ -8,7 +8,7 @@ import { IconBack, IconEdit, IconPlus, IconTrash } from '@/ui/Icons'
 import { VaultEditor } from './VaultEditor'
 import { VaultProjection } from '@/charts/VaultProjection'
 import { simulate, suggestedPerWeek } from '@/domain/pace'
-import { formatCountdown, formatMedium, todayISO } from '@/domain/dates'
+import { formatCountdown, formatMedium, plural, todayISO } from '@/domain/dates'
 import { toast } from '@/ui/toast'
 import { haptic } from '@/ui/feedback'
 import type { Route } from '@/app/router'
@@ -150,10 +150,10 @@ export function VaultDetail({ vaultId, navigate, onLog }: Props) {
             <p className="small">
               {pace.status === 'behind' || pace.status === 'atrisk' ? (
                 <>At {fmt.money(pace.velocityPerWeek)} a week you would land{' '}
-                  <strong>{Math.abs(pace.daysEarly ?? 0)} days late</strong>. Lift it to{' '}
+                  <strong>{plural(Math.abs(pace.daysEarly ?? 0), 'day')} late</strong>. Lift it to{' '}
                   <strong>{fmt.money(pace.requiredPerWeek ?? 0)} a week</strong> and you are back on time.</>
               ) : pace.status === 'ahead' ? (
-                <>You are set to finish <strong>{pace.daysEarly} days early</strong> at this rate.</>
+                <>You are set to finish <strong>{plural(pace.daysEarly ?? 0, 'day')} early</strong> at this rate.</>
               ) : pace.status === 'nodata' ? (
                 <span className="muted">Log a couple of deposits and a real finish date appears here.</span>
               ) : (

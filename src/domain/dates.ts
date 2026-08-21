@@ -180,3 +180,8 @@ export function eachDay(from: ISODate, to: ISODate): ISODate[] {
   }
   return out
 }
+
+/** '1 day' / '3 days'. Small, but "1 days left" reads as a bug to a user. */
+export function plural(n: number, one: string, many = `${one}s`): string {
+  return `${n} ${Math.abs(n) === 1 ? one : many}`
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   addDays, addMonths, daysBetween, daysLeftInMonth, eachDay, formatCountdown,
-  formatRelativeDay, fromISO, isValidISO, isoWeekKey, monthEnd, monthKey,
+  formatRelativeDay, fromISO, isValidISO, isoWeekKey, monthEnd, monthKey, plural,
   monthStart, toISO, weekEnd, weeksBetween, weekStart,
 } from '../dates'
 
@@ -113,5 +113,19 @@ describe('eachDay', () => {
   it('is inclusive on both ends', () => {
     expect(eachDay('2026-08-01', '2026-08-03')).toEqual(['2026-08-01', '2026-08-02', '2026-08-03'])
     expect(eachDay('2026-08-01', '2026-08-01')).toEqual(['2026-08-01'])
+  })
+})
+
+describe('plural', () => {
+  it('drops the s for exactly one', () => {
+    expect(plural(1, 'day')).toBe('1 day')
+    expect(plural(0, 'day')).toBe('0 days')
+    expect(plural(2, 'day')).toBe('2 days')
+    expect(plural(-1, 'day')).toBe('-1 day')
+  })
+
+  it('takes an irregular plural', () => {
+    expect(plural(1, 'entry', 'entries')).toBe('1 entry')
+    expect(plural(3, 'entry', 'entries')).toBe('3 entries')
   })
 })

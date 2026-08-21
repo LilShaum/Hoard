@@ -7,7 +7,7 @@ import { Notch, Meter, Status, VaultCard, QuestRow, ActivityRow } from '@/ui/par
 import { IconPlus } from '@/ui/Icons'
 import { WeekSpark } from '@/charts/Charts'
 import { BUDGET_LABEL } from '@/domain/budget'
-import { formatWeekday, todayISO } from '@/domain/dates'
+import { formatWeekday, plural, todayISO } from '@/domain/dates'
 import { toast } from '@/ui/toast'
 import { haptic, soundClaim } from '@/ui/feedback'
 import type { Route } from '@/app/router'
@@ -112,8 +112,8 @@ export function Home({ onLog, navigate }: Props) {
                   {d.month.hit
                     ? 'Goal met — everything from here is a bonus.'
                     : d.month.onPace
-                      ? `Ahead of an even pace. ${fmt.money(d.month.remaining)} left, ${d.month.daysLeft} days to go.`
-                      : `Behind an even pace. ${fmt.money(d.month.remaining)} left in ${d.month.daysLeft} days.`}
+                      ? `Ahead of an even pace. ${fmt.money(d.month.remaining)} left, ${plural(d.month.daysLeft, 'day')} to go.`
+                      : `Behind an even pace. ${fmt.money(d.month.remaining)} left in ${plural(d.month.daysLeft, 'day')}.`}
                 </p>
               </>
             ) : (
