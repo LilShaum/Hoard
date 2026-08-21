@@ -1,0 +1,79 @@
+/** A local calendar day, 'YYYY-MM-DD'. Never a Date — timezones eat those. */
+export type ISODate = string
+
+/** Money, always integer minor units (cents/pence). Floats never touch money. */
+export type Cents = number
+
+export type AccentKey =
+  | 'gold' | 'ember' | 'rose' | 'violet' | 'azure' | 'teal' | 'lime' | 'slate'
+
+export type ThemeKey =
+  | 'midnight' | 'emberlight' | 'deepsea' | 'verdant' | 'royal'
+  | 'ice' | 'dragonfire' | 'aurum' | 'void'
+
+export type Vault = {
+  id: string
+  name: string
+  emoji: string
+  /** null = open-ended, just accumulate. */
+  target: Cents | null
+  /** null = no date pressure. */
+  deadline: ISODate | null
+  color: AccentKey
+  createdAt: ISODate
+  completedAt: ISODate | null
+  archived: boolean
+  note: string
+}
+
+export type EntryKind = 'deposit' | 'withdrawal'
+
+export type Entry = {
+  id: string
+  /** null = the general hoard (money set aside without a named vault). */
+  vaultId: string | null
+  /** Always positive; `kind` carries the direction. */
+  amount: Cents
+  kind: EntryKind
+  date: ISODate
+  note: string
+  createdAt: number
+}
+
+/**
+ * Note: there is no stored `xp`. Every point of XP is *derived* from entries,
+ * vaults, claimed quests and unlocked achievements, so it can never drift out
+ * of sync with reality — and imported or demo data lands at the right level for
+ * free.
+ */
+export type Profile = {
+  name: string
+  currency: string
+  locale: string
+  monthlyTarget: Cents
+  theme: ThemeKey
+  unlockedThemes: ThemeKey[]
+  sound: boolean
+  reduceMotion: boolean
+  onboarded: boolean
+  createdAt: ISODate
+}
+
+export type ProgressState = {
+  /** questId -> date claimed */
+  claimedQuests: Record<string, ISODate>
+  /** achievementId -> date unlocked */
+  unlockedAchievements: Record<string, ISODate>
+  /** Highest level the user has been shown a level-up for. */
+  seenLevel: number
+  /** Vault ids we've already celebrated, so completion fires once. */
+  celebratedVaults: string[]
+}
+
+export type State = {
+  version: number
+  profile: Profile
+  vaults: Vault[]
+  entries: Entry[]
+  progress: ProgressState
+}
