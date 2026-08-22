@@ -57,7 +57,7 @@ export function VaultDetail({ vaultId, navigate, onLog }: Props) {
 
   const remove = () => {
     dispatch({ type: 'vault/delete', id: vault.id })
-    toast(`${vault.name} deleted — its money moved to the general hoard`)
+    toast(`${vault.name} deleted — its money moved to the Bank`)
     haptic(18)
     navigate({ name: 'vaults' })
   }
@@ -267,7 +267,7 @@ export function VaultDetail({ vaultId, navigate, onLog }: Props) {
       >
         <p className="small muted">
           The vault goes, but the {fmt.money(vault.saved)} inside it does not — those
-          entries move to your general hoard, so your totals and your level stay exactly
+          entries move to your Bank, so your totals and your level stay exactly
           as they are.
         </p>
       </Sheet>

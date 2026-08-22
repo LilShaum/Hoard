@@ -7,9 +7,10 @@ import { Notch, Meter, Status, VaultCard, QuestRow, ActivityRow } from '@/ui/par
 import { IconPlus } from '@/ui/Icons'
 import { WeekSpark } from '@/charts/Charts'
 import { BUDGET_LABEL } from '@/domain/budget'
-import { formatWeekday, plural, todayISO } from '@/domain/dates'
+import { formatWeekday, isoWeekKey, plural, todayISO } from '@/domain/dates'
 import { toast } from '@/ui/toast'
 import { haptic, soundClaim } from '@/ui/feedback'
+import { makeTransfer } from '@/store/reducer'
 import type { Route } from '@/app/router'
 
 type Props = {
@@ -50,6 +51,17 @@ export function Home({ onLog, navigate }: Props) {
 
   const rail = d.activeVaults.length > 0 ? d.activeVaults : d.completedVaults
   const budgetTone = d.budget.status === 'over' ? 'bad' : d.budget.status === 'close' ? 'warn' : 'good'
+
+  const distribute = () => {
+    const today = todayISO()
+    const entries = d.bankPlan.allocations
+      .flatMap((a) => makeTransfer(a.vaultId, a.amount, today, 'Weekly split from the Bank'))
+    dispatch({ type: 'entries/add', entries })
+    dispatch({ type: 'bank/distributed', week: isoWeekKey(today) })
+    soundClaim()
+    haptic([8, 24, 8])
+    toast(`Sent to ${plural(d.bankPlan.allocations.length, 'vault')}`)
+  }
 
   return (
     <div className="stack stack--lg">
@@ -128,6 +140,58 @@ export function Home({ onLog, navigate }: Props) {
           </button>
         </div>
       </section>
+
+      {/* ----------------------------------------------------------- bank */}
+      {(d.generalSaved > 0 || d.bankPlan.needed > 0) && (
+        <section className="panel">
+          <header className="panel__head">
+            <span className="label">Bank</span>
+            <span className="tiny faint num">{fmt.money(d.generalSaved)} unsplit</span>
+          </header>
+          <div className="panel__body stack stack--md">
+            {d.offerDistribution ? (
+              <>
+                <p className="small muted">
+                  This week's split is ready: {fmt.money(d.bankPlan.total)} into{' '}
+                  {plural(d.bankPlan.allocations.length, 'vault')}.
+                </p>
+                <ul className="stack stack--sm">
+                  {d.bankPlan.allocations.map((a) => (
+                    <li key={a.vaultId} className="row row--between tiny">
+                      <span>{a.name}</span>
+                      <span className="num">
+                        {fmt.money(a.amount)}{a.short && <span className="faint"> of {fmt.money(a.needPerWeek)}</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <button className="btn btn--primary btn--block" onClick={distribute}>
+                  Send to vaults
+                </button>
+                {!d.bankPlan.covered && (
+                  <p className="tiny faint">
+                    The Bank can't cover the full week — the nearest deadlines go first.
+                  </p>
+                )}
+              </>
+            ) : d.bankPlan.empty ? (
+              <p className="small muted">
+                Give a vault a target and a deadline, and this is where Hoard works out
+                what it needs each week.
+              </p>
+            ) : d.generalSaved <= 0 ? (
+              <p className="small muted">
+                Your vaults need {fmt.money(d.bankPlan.needed)} a week and the Bank is
+                dry — deposit here and it'll be ready to split.
+              </p>
+            ) : (
+              <p className="small muted">
+                This week's split is done. The next one unlocks Monday.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* --------------------------------------------------------- this week */}
       <section className="panel">
@@ -250,7 +314,7 @@ export function Home({ onLog, navigate }: Props) {
                 <ActivityRow
                   key={e.id}
                   entry={e}
-                  vaultName={v?.name ?? (e.kind === 'spend' ? 'Spending' : 'General hoard')}
+                  vaultName={v?.name ?? (e.kind === 'spend' ? 'Spending' : 'Bank')}
                   glyph={v?.glyph ?? (e.kind === 'spend' ? 'bag' : 'coin')}
                   type={v?.type ?? null}
                   money={fmt.money}

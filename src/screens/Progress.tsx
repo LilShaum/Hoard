@@ -35,7 +35,7 @@ export function Progress() {
     const tail = withMoney.slice(5).reduce((n, v) => n + v.saved, 0)
     const out = [...head]
     if (tail > 0) out.push({ label: 'Other vaults', value: tail, color: 'var(--ink-3)' })
-    if (d.generalSaved > 0) out.push({ label: 'General hoard', value: d.generalSaved, color: 'var(--ink-2)' })
+    if (d.generalSaved > 0) out.push({ label: 'Bank', value: d.generalSaved, color: 'var(--ink-2)' })
     return out
   }, [d.vaults, d.generalSaved])
 

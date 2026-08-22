@@ -8,7 +8,7 @@ import { computePace, type Pace } from './pace'
 import { computeStreak, type StreakInfo } from './streak'
 import {
   byMonth, depositDays as depositDaysOf, depositsOf, netOf, records as computeRecords,
-  signed, spendOf, withdrawalsOf, type Records,
+  isNewMoney, signed, spendOf, withdrawalsOf, type Records,
 } from './stats'
 import {
   levelForXp, nextRank as nextRankFor, rankForLevel, xpForDeposit, xpForVaultCompletion,
@@ -18,6 +18,7 @@ import { claimedQuestXp, generateQuests, type Quest } from './quests'
 import {
   achievementXp, evaluateAchievements, type AchFacts, type AchievementView,
 } from './achievements'
+import { planDistribution, shouldOfferDistribution, type Plan } from './allocate'
 
 /**
  * One function turns `State` into everything every screen needs. Nothing here is
@@ -92,6 +93,10 @@ export type Derived = {
   records: Records
   depositDays: ISODate[]
   hasData: boolean
+  /** This week's proposed move from the Bank into vaults that need it. */
+  bankPlan: Plan
+  /** Whether that plan should be surfaced — not yet taken this week, and non-empty. */
+  offerDistribution: boolean
 }
 
 /** Chronological, then by insertion — the order money actually moved. */
@@ -115,7 +120,7 @@ function reachedDate(target: Cents | null, entries: Entry[]): ISODate | null {
 function depositXp(entries: Entry[]): number {
   const perDay = new Map<ISODate, Entry[]>()
   for (const e of entries) {
-    if (e.kind !== 'deposit') continue
+    if (!isNewMoney(e)) continue
     const list = perDay.get(e.date)
     if (list) list.push(e)
     else perDay.set(e.date, [e])
@@ -182,6 +187,9 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
   const totalSpent = spendOf(entries)
   const generalSaved = netOf(general)
   const budget = computeBudget(entries, state.profile.weeklyLimit, today)
+
+  const bankPlan = planDistribution(vaults, generalSaved)
+  const offerDistribution = shouldOfferDistribution(bankPlan, state.progress.lastDistributedWeek, today)
 
   const depositDays = depositDaysOf(entries)
   const streak = computeStreak(depositDays, today)
@@ -299,6 +307,8 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
     records,
     depositDays,
     hasData: entries.length > 0,
+    bankPlan,
+    offerDistribution,
   }
 }
 

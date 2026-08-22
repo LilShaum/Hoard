@@ -20,9 +20,14 @@ export function netOf(entries: Entry[]): Cents {
   return n
 }
 
+/** A deposit that brought money in from outside, rather than moving it around. */
+export function isNewMoney(e: Entry): boolean {
+  return e.kind === 'deposit' && !e.transferId
+}
+
 export function depositsOf(entries: Entry[]): Cents {
   let n = 0
-  for (const e of entries) if (e.kind === 'deposit') n += e.amount
+  for (const e of entries) if (isNewMoney(e)) n += e.amount
   return n
 }
 
@@ -157,7 +162,7 @@ function best(m: Map<string, Cents>): { key: string; value: Cents } | null {
 }
 
 export function records(entries: Entry[]): Records {
-  const deposits = entries.filter((e) => e.kind === 'deposit')
+  const deposits = entries.filter(isNewMoney)
   const weekVals = [...byWeek(entries).values()].filter((v) => v > 0).sort((a, b) => a - b)
   const total = depositsOf(deposits)
 
@@ -177,6 +182,7 @@ export function records(entries: Entry[]): Records {
 /** Distinct calendar days that saw a deposit. */
 export function depositDays(entries: Entry[]): ISODate[] {
   const s = new Set<ISODate>()
-  for (const e of entries) if (e.kind === 'deposit') s.add(e.date)
+  // Moving money between your own pots is not a day you saved.
+  for (const e of entries) if (isNewMoney(e)) s.add(e.date)
   return [...s].sort()
 }

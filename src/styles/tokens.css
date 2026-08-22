@@ -31,6 +31,12 @@
   --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px;
 
   /* Hard geometry. Nothing in this interface is a pill. */
+  /* Device safe areas, behind variables so a test can simulate a notch —
+     env() always reports 0 in a desktop browser, which is exactly the
+     condition under which this bug shipped unnoticed. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
   --r-1: 2px;
   --r-2: 3px;
   --r-3: 5px;

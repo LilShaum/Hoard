@@ -127,6 +127,9 @@ function sanitiseEntry(e: any, today: string): Entry | null {
     date: date(e.date, today)!,
     note: str(e.note).slice(0, 200),
     createdAt: int(e.createdAt, Date.now()),
+    ...(typeof e.transferId === 'string' && e.transferId
+      ? { transferId: e.transferId.slice(0, 64) }
+      : null),
   }
 }
 
@@ -184,6 +187,9 @@ export function sanitise(raw: any): State {
       celebratedVaults: Array.isArray(pr.celebratedVaults)
         ? pr.celebratedVaults.filter((v: unknown) => typeof v === 'string')
         : [],
+      lastDistributedWeek: typeof pr.lastDistributedWeek === 'string'
+        ? pr.lastDistributedWeek
+        : null,
     },
   }
 }

@@ -45,7 +45,7 @@ export function Vaults({ navigate }: { navigate: (r: Route) => void }) {
         {d.generalSaved > 0 && (
           <footer className="panel__foot">
             <button className="btn btn--link" onClick={() => navigate({ name: 'activity' })}>
-              Plus {fmt.money(d.generalSaved)} in the general hoard
+              Plus {fmt.money(d.generalSaved)} in the Bank
             </button>
           </footer>
         )}

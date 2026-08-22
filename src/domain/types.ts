@@ -53,7 +53,7 @@ export type EntryKind = 'deposit' | 'withdrawal' | 'spend'
 
 export type Entry = {
   id: string
-  /** null = the general hoard, and always null for a spend. */
+  /** null = the Bank, and always null for a spend. */
   vaultId: string | null
   /** Always positive; `kind` carries the direction. */
   amount: Cents
@@ -61,6 +61,13 @@ export type Entry = {
   date: ISODate
   note: string
   createdAt: number
+  /**
+   * Set on both halves of an internal move (Bank -> vault). Shuffling money
+   * you already saved is not new saving, so transfers are excluded from
+   * deposit totals, deposit XP, streak days and personal records — otherwise
+   * distributing to five vaults would look like five deposits.
+   */
+  transferId?: string
 }
 
 /**
@@ -95,6 +102,8 @@ export type ProgressState = {
   seenLevel: number
   /** Vault ids we've already celebrated, so completion fires once. */
   celebratedVaults: string[]
+  /** ISO week of the last Bank distribution, so it is offered once a week. */
+  lastDistributedWeek: string | null
 }
 
 export type State = {

@@ -34,29 +34,31 @@ const check = async (name, fn) => {
  * or a toast will happily swallow the next click. Wait for any celebration to
  * actually start, then clear it.
  */
-const settle = async () => {
-  await page.waitForTimeout(700)
+const settle = async (p = page) => {
+  await p.waitForTimeout(700)
   for (let i = 0; i < 8; i++) {
-    if ((await page.locator('.overlay').count()) === 0) break
-    const keep = page.getByRole('button', { name: 'Keep going' })
+    if ((await p.locator('.overlay').count()) === 0) break
+    const keep = p.getByRole('button', { name: 'Keep going' })
     if (await keep.count()) await keep.click({ timeout: 2500 }).catch(() => {})
-    else await page.keyboard.press('Escape')
-    await page.waitForTimeout(300)
+    else await p.keyboard.press('Escape')
+    await p.waitForTimeout(300)
   }
-  await page.locator('.toast').last().waitFor({ state: 'detached', timeout: 4000 }).catch(() => {})
+  await p.locator('.toast').last().waitFor({ state: 'detached', timeout: 4000 }).catch(() => {})
 }
 
-const money = async () =>
-  Number((await page.locator('.hoard__total').first().innerText()).replace(/[^\d.]/g, ''))
+const moneyOn = async (p) =>
+  Number((await p.locator('.hoard__total').first().innerText()).replace(/[^\d.]/g, ''))
+const money = async () => moneyOn(page)
 
-const save = async (amount, button = 'Log something', confirm = 'Save it') => {
-  await settle()
-  await page.getByRole('button', { name: button }).click()
-  await page.getByLabel('Amount', { exact: true }).fill(amount)
-  await page.getByRole('button', { name: confirm }).click()
+const saveOn = async (p, amount, button = 'Log something', confirm = 'Save it') => {
+  await settle(p)
+  await p.getByRole('button', { name: button }).click()
+  await p.getByLabel('Amount', { exact: true }).fill(amount)
+  await p.getByRole('button', { name: confirm }).click()
   // The headline figure eases to its new value; let the roll-up land.
-  await page.waitForTimeout(1300)
+  await p.waitForTimeout(1300)
 }
+const save = async (amount, button, confirm) => saveOn(page, amount, button, confirm)
 
 const go = async (hash) => {
   await settle()
@@ -189,7 +191,7 @@ await check('locked themes cannot be selected', async () => {
 })
 
 /* ------------------------------------------------------------ destructive */
-await check('deleting a vault keeps its money in the general hoard', async () => {
+await check('deleting a vault keeps its money in the Bank', async () => {
   await go('vaults')
   await page.locator('.vaultcard').first().click()
   await page.waitForSelector('.vaulthero__name')
@@ -303,12 +305,12 @@ await check('the activity ledger lists and filters the full history', async () =
   assert.ok(!/\+\$/.test(await page.locator('.activity__amount').first().innerText()))
 })
 
-await check('the ledger can isolate the general hoard', async () => {
+await check('the ledger can isolate the Bank', async () => {
   await page.getByRole('button', { name: 'All', exact: true }).click()
-  await page.getByRole('button', { name: /General hoard/ }).click()
+  await page.getByRole('button', { name: /Bank/ }).click()
   await page.waitForTimeout(400)
   const names = await page.locator('.activity__title').allInnerTexts()
-  assert.ok(names.length > 0, 'no general-hoard entries found')
+  assert.ok(names.length > 0, 'no Bank entries found')
 })
 
 await check('an entry can be deleted from the ledger', async () => {
@@ -416,6 +418,54 @@ await check('an iPhone inside a frame is not told to tap Share in Safari', async
   await ctx.close()
 })
 
+await check('nothing is hidden under the status bar on a notched iPhone', async () => {
+  const ctx = await browser.newContext({ ...devices['iPhone 13'] })
+  const ip = await ctx.newPage()
+  await ip.goto(BASE, { waitUntil: 'networkidle' })
+  await ip.evaluate(() => localStorage.clear())
+  // env(safe-area-inset-*) always reports 0 in a desktop-class browser, which
+  // is precisely why this shipped broken. Simulate a real notch.
+  await ip.addStyleTag({ content: ':root{--safe-top:47px;--safe-bottom:34px}' })
+  await ip.reload({ waitUntil: 'networkidle' })
+  await ip.addStyleTag({ content: ':root{--safe-top:47px;--safe-bottom:34px}' })
+  // The demo link lives on step 0, which on iPhone is the install step.
+  await ip.getByRole('button', { name: 'See a demo instead' }).click()
+  await ip.waitForTimeout(3200)
+  const keep = ip.getByRole('button', { name: 'Keep going' })
+  if (await keep.count()) await keep.click().catch(() => {})
+  await ip.waitForTimeout(2500)
+  await ip.addStyleTag({ content: ':root{--safe-top:47px;--safe-bottom:34px}' })
+
+  const clearsNotch = async (locator, label) => {
+    const box = await locator.boundingBox()
+    assert.ok(box, `${label} not found`)
+    assert.ok(box.y >= 47, `${label} starts at y=${box.y}, under the 47px status bar`)
+  }
+
+  // A screen that renders a topbar.
+  await clearsNotch(ip.locator('.topbar__title').first(), 'home topbar')
+
+  // And one that does not — this is the screen that was reported broken.
+  await ip.goto(`${BASE}#/vaults`, { waitUntil: 'networkidle' })
+  await ip.addStyleTag({ content: ':root{--safe-top:47px;--safe-bottom:34px}' })
+  await ip.locator('.vaultcard').first().click()
+  await ip.waitForSelector('.vaulthero__name')
+  await ip.addStyleTag({ content: ':root{--safe-top:47px;--safe-bottom:34px}' })
+  await clearsNotch(ip.getByRole('button', { name: 'Vaults' }).first(), 'vault detail back button')
+  await ctx.close()
+})
+
+await check('the status bar style does not force white text over a light page', async () => {
+  const ctx = await browser.newContext({ ...devices['iPhone 13'] })
+  const ip = await ctx.newPage()
+  await ip.goto(BASE, { waitUntil: 'networkidle' })
+  const style = await ip.locator('meta[name="apple-mobile-web-app-status-bar-style"]')
+    .getAttribute('content')
+  // black-translucent means white status text and content running underneath.
+  assert.notEqual(style, 'black-translucent')
+  await ctx.close()
+})
+
 await check('the page carries an apple-touch-icon, so iOS does not use a screenshot', async () => {
   const ctx = await browser.newContext({ ...devices['iPhone 13'] })
   const ip = await ctx.newPage()
@@ -425,6 +475,54 @@ await check('the page carries an apple-touch-icon, so iOS does not use a screens
   assert.ok(icon.length > 1000, 'apple-touch-icon looks empty')
   assert.equal(
     await ip.locator('meta[name="apple-mobile-web-app-title"]').getAttribute('content'), 'Hoard')
+  await ctx.close()
+})
+
+/* --------------------------------------------------------------- the bank */
+await check('the Bank offers a weekly split into vaults, and taking it moves the money', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const bp = await ctx.newPage()
+  await bp.goto(BASE, { waitUntil: 'domcontentloaded' })
+  await bp.evaluate(() => localStorage.clear())
+  await bp.goto(BASE, { waitUntil: 'networkidle' })
+
+  // A fresh account with one dated, targeted vault — same path onboarding
+  // already takes in the main flow above.
+  await bp.waitForSelector('.onboard')
+  await bp.getByPlaceholder('Optional').fill('Riley')
+  await bp.getByRole('button', { name: 'Next' }).click()
+  await bp.getByRole('button', { name: 'Next' }).click()
+  await bp.getByRole('button', { name: 'Christmas', exact: true }).click()
+  await bp.getByRole('button', { name: 'Next' }).click()
+  await bp.getByRole('button', { name: '$400' }).click()
+  await bp.getByRole('button', { name: 'Next' }).click()
+  await bp.getByRole('button', { name: '$150' }).click()
+  await bp.getByRole('button', { name: 'Start my hoard' }).click()
+  await settle(bp)
+  await bp.waitForSelector('.companion')
+
+  // The exact complaint the Bank exists to fix: a single lump deposit should
+  // not leave every vault sitting at zero.
+  await saveOn(bp, '600')
+  await settle(bp)
+  const totalAfterDeposit = await moneyOn(bp)
+
+  const sendButton = bp.getByRole('button', { name: 'Send to vaults' })
+  await sendButton.waitFor({ timeout: 4000 })
+  assert.match(await bp.getByText('unsplit').innerText(), /\$/)
+
+  await sendButton.click()
+  await bp.waitForTimeout(900)
+
+  // It's a move, not new saving — the headline total does not change.
+  assert.equal(await moneyOn(bp), totalAfterDeposit)
+  // Offered once — taking it clears the prompt until the next ISO week.
+  assert.equal(await bp.getByRole('button', { name: 'Send to vaults' }).count(), 0)
+
+  await bp.goto(`${BASE}#/vaults`, { waitUntil: 'networkidle' })
+  const vaultText = await bp.locator('.vaultcard').first().innerText()
+  assert.match(vaultText, /\$[1-9]/, 'the vault is still at zero after a distribution')
+
   await ctx.close()
 })
 

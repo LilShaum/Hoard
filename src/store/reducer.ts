@@ -1,4 +1,4 @@
-import type { Entry, EntryKind, ISODate, Profile, State, ThemeKey, Vault } from '@/domain/types'
+import type { Cents, Entry, EntryKind, ISODate, Profile, State, ThemeKey, Vault } from '@/domain/types'
 import { todayISO } from '@/domain/dates'
 import { newId, type VaultDraft, makeVault } from './defaults'
 
@@ -15,12 +15,26 @@ export type Action =
   | { type: 'level/seen'; level: number }
   | { type: 'profile/update'; patch: Partial<Profile> }
   | { type: 'theme/unlock'; themes: ThemeKey[] }
+  | { type: 'entries/add'; entries: Entry[] }
+  | { type: 'bank/distributed'; week: string }
   | { type: 'state/replace'; state: State }
 
 export function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'entry/add':
       return { ...state, entries: [...state.entries, action.entry] }
+
+    // A distribution is many entries that must land together — one of them
+    // arriving without the others would leave the books unbalanced.
+    case 'entries/add':
+      return action.entries.length === 0
+        ? state
+        : { ...state, entries: [...state.entries, ...action.entries] }
+
+    case 'bank/distributed':
+      return state.progress.lastDistributedWeek === action.week
+        ? state
+        : { ...state, progress: { ...state.progress, lastDistributedWeek: action.week } }
 
     case 'entry/update':
       return {
@@ -125,4 +139,18 @@ export function makeEntry(draft: EntryDraft): Entry {
 }
 
 export const addEntry = (draft: EntryDraft): Action => ({ type: 'entry/add', entry: makeEntry(draft) })
+
+/**
+ * One move of money from the Bank into a vault, as a linked pair: out of the
+ * Bank, into the vault. Booking it as a pair keeps the running total honest —
+ * a distribution changes where money sits, never how much there is.
+ */
+export function makeTransfer(vaultId: string, amount: Cents, date: ISODate, note: string): Entry[] {
+  const transferId = newId('t_')
+  const at = Date.now()
+  return [
+    { id: newId('e_'), vaultId: null, amount, kind: 'withdrawal', date, note, createdAt: at, transferId },
+    { id: newId('e_'), vaultId, amount, kind: 'deposit', date, note, createdAt: at + 1, transferId },
+  ]
+}
 export const addVault = (draft: VaultDraft): Action => ({ type: 'vault/add', vault: makeVault(draft) })

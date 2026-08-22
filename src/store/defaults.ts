@@ -49,6 +49,7 @@ export function initialState(): State {
       unlockedAchievements: {},
       seenLevel: 1,
       celebratedVaults: [],
+      lastDistributedWeek: null,
     },
   }
 }

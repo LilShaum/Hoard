@@ -165,7 +165,7 @@ export function SaveSheet({ open, onClose, vaultId = null, initialKind = 'deposi
             <span className="label">Which vault</span>
             <div className="row row--tight row--wrap">
               <button className="chip" aria-pressed={target === null} onClick={() => setTarget(null)}>
-                <Glyph name="coin" size={15} /> General hoard
+                <Glyph name="coin" size={15} /> Bank
               </button>
               {openVaults.map((v) => (
                 <button key={v.id} className="chip" aria-pressed={target === v.id}

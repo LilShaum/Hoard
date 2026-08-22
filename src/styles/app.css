@@ -123,6 +123,7 @@ h1, h2, h3 {
   background: var(--plane);
   position: relative;
   overflow: hidden;
+  padding-top: var(--safe-top);
 }
 
 .app__scroll {
@@ -130,7 +131,7 @@ h1, h2, h3 {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding: 0 var(--sp-4) calc(var(--sp-10) + 76px + env(safe-area-inset-bottom));
+  padding: var(--sp-4) var(--sp-4) calc(var(--sp-10) + 76px + var(--safe-bottom));
 }
 
 .topbar {
@@ -140,7 +141,7 @@ h1, h2, h3 {
   display: flex;
   align-items: flex-end;
   gap: var(--sp-3);
-  padding: calc(var(--sp-4) + env(safe-area-inset-top)) 0 var(--sp-3);
+  padding: 0 0 var(--sp-3);
   background: var(--plane);
   border-bottom: var(--bw) solid var(--rule);
   margin-bottom: var(--sp-4);
@@ -166,7 +167,7 @@ h1, h2, h3 {
   grid-template-columns: repeat(5, 1fr);
   background: var(--panel);
   border-top: var(--bw) solid var(--rule);
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: var(--safe-bottom);
 }
 
 .tabbar__btn {
@@ -612,7 +613,7 @@ h1, h2, h3 {
 .sheet__foot {
   display: flex;
   gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-4) calc(var(--sp-3) + env(safe-area-inset-bottom));
+  padding: var(--sp-3) var(--sp-4) calc(var(--sp-3) + var(--safe-bottom));
   border-top: var(--bw) solid var(--rule);
   background: var(--sunken);
   flex: none;
@@ -625,7 +626,7 @@ h1, h2, h3 {
 .toasts {
   position: fixed;
   left: 50%;
-  bottom: calc(88px + env(safe-area-inset-bottom));
+  bottom: calc(88px + var(--safe-bottom));
   z-index: 60;
   transform: translateX(-50%);
   display: flex;

@@ -12,7 +12,7 @@ import type { Route } from '@/app/router'
 type Filter = 'all' | 'in' | 'out' | 'spend'
 
 /**
- * The full ledger. Without it, money logged straight to the general hoard is
+ * The full ledger. Without it, money logged straight to the Bank is
  * visible as a number but its individual entries are unreachable — you can see
  * the total and never find the mistake inside it.
  */
@@ -56,7 +56,7 @@ export function Activity({ navigate }: { navigate: (r: Route) => void }) {
 
   const sources: Array<{ key: string; label: string }> = [
     { key: 'all', label: 'Everything' },
-    { key: 'general', label: 'General hoard' },
+    { key: 'general', label: 'Bank' },
     { key: 'spend', label: 'Spending' },
     ...d.vaults.filter((v) => v.entryCount > 0).map((v) => ({ key: v.id, label: v.name })),
   ]
@@ -118,7 +118,7 @@ export function Activity({ navigate }: { navigate: (r: Route) => void }) {
                     <ActivityRow
                       key={e.id}
                       entry={e}
-                      vaultName={v?.name ?? (e.kind === 'spend' ? 'Spending' : 'General hoard')}
+                      vaultName={v?.name ?? (e.kind === 'spend' ? 'Spending' : 'Bank')}
                       glyph={v?.glyph ?? (e.kind === 'spend' ? 'bag' : 'coin')}
                       type={v?.type ?? null}
                       money={fmt.money}

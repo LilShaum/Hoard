@@ -60,6 +60,7 @@ export function state(over: Partial<State> = {}): State {
       unlockedAchievements: {},
       seenLevel: 1,
       celebratedVaults: [],
+      lastDistributedWeek: null,
     },
     ...over,
   }
