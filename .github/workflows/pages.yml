@@ -66,8 +66,14 @@ jobs:
         with:
           path: dist
 
+  # Only the default branch may deploy: enabling Pages restricts the
+  # github-pages environment to it, so attempting a deploy from a working
+  # branch is rejected outright and leaves that branch permanently red. Every
+  # other branch still gets the full typecheck, test and build above as a
+  # normal CI check, and can go green on its own.
   deploy:
     needs: build
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
     environment:
       name: github-pages
