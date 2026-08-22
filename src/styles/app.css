@@ -1285,3 +1285,72 @@ body[data-reduce-motion='true'] *::after {
   .typegrid { grid-template-columns: repeat(2, 1fr); }
   .tabbar__label { font-size: 8.5px; }
 }
+
+/* ------------------------------------------------------- install step
+   The numbers here are load-bearing: you cannot tap Add to Home Screen
+   before you have opened the Share sheet, so the sequence is real rather
+   than decorative. */
+
+.installsteps {
+  display: flex;
+  flex-direction: column;
+  border: var(--bw) solid var(--rule);
+  border-radius: var(--r-2);
+  background: var(--panel);
+}
+
+.installstep {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.installstep + .installstep { border-top: 1px solid var(--rule-soft); }
+
+.installstep__n {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: var(--r-1);
+  background: var(--ink);
+  color: var(--panel);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.installstep__body {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+/* The glyph sits inline with the sentence it names, boxed so it reads as a
+   picture of a button rather than as punctuation. */
+.installstep__glyph {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-top: -3px;
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--r-1);
+  background: var(--sunken);
+  color: var(--accent);
+}
+
+.installnote {
+  padding: var(--sp-3);
+  border-left: 3px solid var(--warn);
+  background: var(--sunken);
+  border-radius: var(--r-1);
+  font-size: 13px;
+  line-height: 1.5;
+}

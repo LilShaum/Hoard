@@ -13,8 +13,8 @@ import { demoState } from '@/store/demo'
 import { suppressNextCelebration } from '@/app/effects'
 import { toast } from '@/ui/toast'
 import { haptic } from '@/ui/feedback'
-
-const STEPS = 5
+import { probeInstall } from '@/app/install'
+import { InstallStep } from './InstallStep'
 
 function nextChristmas(today = todayISO()): string {
   const year = Number(today.slice(0, 4))
@@ -28,6 +28,12 @@ function nextChristmas(today = todayISO()): string {
  */
 export function Onboarding({ onDone }: { onDone: () => void }) {
   const fmt = useFormat()
+
+  // Probed once, on mount: it cannot change while onboarding is open, and
+  // running as an installed app makes the install step pointless.
+  const [install] = useState(probeInstall)
+  const showInstall = install.canInstall
+
   const [step, setStep] = useState(0)
   const [name, setName] = useState('')
   const [currency, setCurrency] = useState(fmt.currency)
@@ -35,6 +41,11 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   const [targetRaw, setTargetRaw] = useState('')
   const [monthlyRaw, setMonthlyRaw] = useState('')
   const [weeklyRaw, setWeeklyRaw] = useState('')
+
+  const offset = showInstall ? 1 : 0
+  const STEPS = 5 + offset
+  /** Which content panel this step index shows, ignoring the install step. */
+  const panel = step - offset
 
   const chosen = preset != null ? VAULT_PRESETS[preset] : null
   const target = parseAmount(targetRaw) ?? chosen?.target ?? null
@@ -87,7 +98,11 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
       <div className="onboard">
         <Notch value={(step + 1) / STEPS} cells={STEPS} thin label="Setup progress" />
 
-        {step === 0 && (
+        {showInstall && step === 0 && install.platform !== 'desktop' && (
+          <InstallStep platform={install.platform} />
+        )}
+
+        {panel === 0 && (
           <div className="onboard__step">
             <span className="onboard__art" style={{ color: 'var(--accent)' }}>
               <Creature stage={0} size={82} />
@@ -108,7 +123,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           </div>
         )}
 
-        {step === 1 && (
+        {panel === 1 && (
           <div className="onboard__step">
             <h1 id="onboarding-title" className="onboard__title">Your currency</h1>
             <p className="muted">Pick the currency you actually save in.</p>
@@ -124,7 +139,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           </div>
         )}
 
-        {step === 2 && (
+        {panel === 2 && (
           <div className="onboard__step">
             <h1 id="onboarding-title" className="onboard__title">What are you saving for?</h1>
             <p className="muted">
@@ -167,7 +182,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           </div>
         )}
 
-        {step === 3 && (
+        {panel === 3 && (
           <div className="onboard__step">
             <h1 id="onboarding-title" className="onboard__title">A monthly deposit goal</h1>
             <p className="muted">
@@ -191,7 +206,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           </div>
         )}
 
-        {step === 4 && (
+        {panel === 4 && (
           <div className="onboard__step">
             <h1 id="onboarding-title" className="onboard__title">A weekly spending limit</h1>
             <p className="muted">
@@ -223,7 +238,9 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             <button className="btn btn--link" onClick={skipToDemo}>See a demo instead</button>
           )}
           <button className="btn btn--primary grow" onClick={next}>
-            {step === STEPS - 1 ? 'Start my hoard' : 'Next'}
+            {step === STEPS - 1 ? 'Start my hoard'
+              : showInstall && step === 0 ? 'Continue anyway'
+              : 'Next'}
           </button>
         </div>
       </div>

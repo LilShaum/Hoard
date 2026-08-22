@@ -2,7 +2,7 @@
  * End-to-end smoke test against the real built app in a real browser.
  * The unit suite proves the engine; this proves the thing people touch.
  */
-import { chromium } from 'playwright'
+import { chromium, devices } from 'playwright'
 import assert from 'node:assert/strict'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:4173'
@@ -349,6 +349,83 @@ await check('a sandboxed embed offers a copyable backup instead of a dead downlo
   assert.match(text, /"version"/)
   assert.ok(text.length > 200, 'backup looks empty')
   await frame.close()
+})
+
+/* ------------------------------------------------------ install on mobile */
+await check('an iPhone in Safari is told how to install before setting up', async () => {
+  const ctx = await browser.newContext({ ...devices['iPhone 13'] })
+  const ip = await ctx.newPage()
+  await ip.goto(BASE, { waitUntil: 'networkidle' })
+  await ip.evaluate(() => localStorage.clear())
+  await ip.reload({ waitUntil: 'networkidle' })
+  await ip.waitForSelector('.onboard__title')
+
+  assert.match(await ip.locator('.onboard__title').innerText(), /Home Screen/i)
+  assert.equal(await ip.locator('.installstep').count(), 4, 'expected four install steps')
+  // The storage warning is the whole reason this comes first.
+  assert.match(await ip.locator('.installnote').innerText(), /separate storage/i)
+  assert.equal(await ip.locator('.notch__cell').count(), 6, 'install step should add a step')
+
+  // It must never be a dead end.
+  await ip.getByRole('button', { name: 'Continue anyway' }).click()
+  await ip.waitForTimeout(400)
+  assert.match(await ip.locator('.onboard__title').innerText(), /Welcome to Hoard/i)
+  await ctx.close()
+})
+
+await check('the installed app skips straight to setup', async () => {
+  const ctx = await browser.newContext({ ...devices['iPhone 13'] })
+  const ip = await ctx.newPage()
+  // navigator.standalone is what iOS sets inside a Home Screen app.
+  await ip.addInitScript(() => Object.defineProperty(navigator, 'standalone', { value: true }))
+  await ip.goto(BASE, { waitUntil: 'networkidle' })
+  await ip.evaluate(() => localStorage.clear())
+  await ip.reload({ waitUntil: 'networkidle' })
+  await ip.waitForSelector('.onboard__title')
+
+  assert.match(await ip.locator('.onboard__title').innerText(), /Welcome to Hoard/i)
+  assert.equal(await ip.locator('.installstep').count(), 0)
+  assert.equal(await ip.locator('.notch__cell').count(), 5)
+  await ctx.close()
+})
+
+await check('a desktop browser is not nagged about installing', async () => {
+  const ctx = await browser.newContext()
+  const dp = await ctx.newPage()
+  await dp.goto(BASE, { waitUntil: 'networkidle' })
+  await dp.evaluate(() => localStorage.clear())
+  await dp.reload({ waitUntil: 'networkidle' })
+  await dp.waitForSelector('.onboard__title')
+  assert.match(await dp.locator('.onboard__title').innerText(), /Welcome to Hoard/i)
+  assert.equal(await dp.locator('.installstep').count(), 0)
+  await ctx.close()
+})
+
+await check('an iPhone inside a frame is not told to tap Share in Safari', async () => {
+  const ctx = await browser.newContext({ ...devices['iPhone 13'] })
+  const fp = await ctx.newPage()
+  await fp.setContent(
+    `<style>html,body{margin:0;height:100%}iframe{border:0;width:100%;height:100%}</style>` +
+    `<iframe src="${BASE}"></iframe>`,
+    { waitUntil: 'networkidle' },
+  )
+  const inner = fp.frameLocator('iframe')
+  await inner.locator('.onboard__title').waitFor({ timeout: 6000 })
+  assert.match(await inner.locator('.onboard__title').innerText(), /Welcome to Hoard/i)
+  assert.equal(await inner.locator('.installstep').count(), 0)
+  await ctx.close()
+})
+
+await check('the page carries an apple-touch-icon, so iOS does not use a screenshot', async () => {
+  const ctx = await browser.newContext({ ...devices['iPhone 13'] })
+  const ip = await ctx.newPage()
+  await ip.goto(BASE, { waitUntil: 'networkidle' })
+  const icon = await ip.locator('link[rel="apple-touch-icon"]').getAttribute('href')
+  assert.ok(icon && icon.startsWith('data:image/png;base64,'), 'apple-touch-icon must be an inlined PNG')
+  assert.ok(icon.length > 1000, 'apple-touch-icon looks empty')
+  assert.equal(
+    await ip.locator('meta[name="apple-mobile-web-app-title"]').getAttribute('content'), 'Hoard')
+  await ctx.close()
 })
 
 await browser.close()
