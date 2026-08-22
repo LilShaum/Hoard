@@ -158,7 +158,10 @@ export function Home({ onLog, navigate }: Props) {
                 <ul className="stack stack--sm">
                   {d.bankPlan.allocations.map((a) => (
                     <li key={a.vaultId} className="row row--between tiny">
-                      <span>{a.name}</span>
+                      <span>
+                        {a.name}
+                        {a.catchUp && <span className="faint"> · past due, catching up</span>}
+                      </span>
                       <span className="num">
                         {fmt.money(a.amount)}{a.short && <span className="faint"> of {fmt.money(a.needPerWeek)}</span>}
                       </span>
@@ -168,7 +171,12 @@ export function Home({ onLog, navigate }: Props) {
                 <button className="btn btn--primary btn--block" onClick={distribute}>
                   Send to vaults
                 </button>
-                {!d.bankPlan.covered && (
+                {d.bankPlan.covered ? (
+                  <p className="tiny faint">
+                    Enough in the Bank for <span className="num">{d.bankRunway}</span>{' '}
+                    {d.bankRunway === 1 ? 'more week' : 'more weeks'} at this rate.
+                  </p>
+                ) : (
                   <p className="tiny faint">
                     The Bank can't cover the full week — the nearest deadlines go first.
                   </p>
@@ -186,7 +194,9 @@ export function Home({ onLog, navigate }: Props) {
               </p>
             ) : (
               <p className="small muted">
-                This week's split is done. The next one unlocks Monday.
+                {fmt.money(d.distributedThisWeek)} went out to your vaults this week.
+                The next split unlocks Monday, with <span className="num">{d.bankRunway}</span>{' '}
+                {d.bankRunway === 1 ? 'week' : 'weeks'} still covered.
               </p>
             )}
           </div>

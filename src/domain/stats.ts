@@ -20,9 +20,28 @@ export function netOf(entries: Entry[]): Cents {
   return n
 }
 
+/**
+ * Half of an internal move between your own pots. Balances must count these —
+ * money really did leave the Bank and land in a vault. Everything that measures
+ * *behaviour* must not: shuffling your own money is not saving it, and it is
+ * not withdrawing it either.
+ */
+export function isTransfer(e: Entry): boolean {
+  return e.transferId != null
+}
+
+/**
+ * Entries that represent money genuinely arriving or leaving. Quests, badges,
+ * streaks, records and the heatmap all run on this list rather than the raw
+ * one, so a Bank distribution can never earn a quest or break a badge.
+ */
+export function externalOnly(entries: Entry[]): Entry[] {
+  return entries.filter((e) => !isTransfer(e))
+}
+
 /** A deposit that brought money in from outside, rather than moving it around. */
 export function isNewMoney(e: Entry): boolean {
-  return e.kind === 'deposit' && !e.transferId
+  return e.kind === 'deposit' && !isTransfer(e)
 }
 
 export function depositsOf(entries: Entry[]): Cents {
@@ -33,7 +52,7 @@ export function depositsOf(entries: Entry[]): Cents {
 
 export function withdrawalsOf(entries: Entry[]): Cents {
   let n = 0
-  for (const e of entries) if (e.kind === 'withdrawal') n += e.amount
+  for (const e of entries) if (e.kind === 'withdrawal' && !isTransfer(e)) n += e.amount
   return n
 }
 
@@ -120,7 +139,7 @@ export type HeatCell = { date: ISODate; value: Cents; level: 0 | 1 | 2 | 3 | 4 }
  * so a $20-a-week saver gets the same satisfying spread as a $2,000 one.
  */
 export function heatmap(entries: Entry[], weeks = 26, today: ISODate = todayISO()): HeatCell[][] {
-  const daily = byDay(entries.filter((e) => e.kind === 'deposit'))
+  const daily = byDay(entries.filter(isNewMoney))
   const start = addDays(weekStart(today), -7 * (weeks - 1))
 
   const values = [...daily.values()].filter((v) => v > 0).sort((a, b) => a - b)

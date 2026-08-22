@@ -1,6 +1,6 @@
 import type { Cents, Entry, ISODate } from './types'
 import type { VaultView } from './selectors'
-import { addDays, daysBetween, isoWeekKey, todayISO, weekStart } from './dates'
+import { isoWeekKey, todayISO } from './dates'
 
 /**
  * The Bank, and the weekly split.
@@ -32,6 +32,12 @@ export type Allocation = {
   amount: Cents
   /** Short of its need because the Bank could not cover it. */
   short: boolean
+  /**
+   * Past its deadline, so "one week's worth" is the whole outstanding balance.
+   * That is the honest number, but it is much larger than the weekly figures
+   * beside it, so the UI labels it rather than letting it look like a glitch.
+   */
+  catchUp: boolean
 }
 
 export type Plan = {
@@ -91,6 +97,7 @@ export function planDistribution(vaults: VaultView[], bank: Cents): Plan {
         needPerWeek: need,
         amount,
         short: amount < need,
+        catchUp: (v.pace.daysLeft ?? 1) <= 0,
       })
     }
   }
@@ -121,22 +128,17 @@ export function shouldOfferDistribution(
   return lastDistributedWeek !== isoWeekKey(today)
 }
 
-/** How many whole weeks of the current plan the Bank could cover. */
+/**
+ * How many more whole weeks the Bank could keep this up. The number that
+ * answers "do I need to put more in?", which is the question a Bank balance
+ * actually raises.
+ */
 export function weeksOfRunway(plan: Plan): number {
   if (plan.needed <= 0) return 0
   return Math.floor(plan.bank / plan.needed)
 }
 
-/**
- * The date the Bank runs dry at this rate — useful for "top me up by" nudges.
- * Null when there is nothing being drawn down.
- */
-export function bankRunsOut(plan: Plan, today: ISODate = todayISO()): ISODate | null {
-  if (plan.needed <= 0 || plan.bank <= 0) return null
-  return addDays(weekStart(today), weeksOfRunway(plan) * 7 + 7)
-}
-
-/** Distributions already made this week, for the ledger and the prompt. */
+/** What this week's distribution already moved, so the panel can say so. */
 export function distributedThisWeek(entries: Entry[], today: ISODate = todayISO()): Cents {
   const week = isoWeekKey(today)
   let n = 0
@@ -144,9 +146,4 @@ export function distributedThisWeek(entries: Entry[], today: ISODate = todayISO(
     if (e.transferId && e.kind === 'deposit' && isoWeekKey(e.date) === week) n += e.amount
   }
   return n
-}
-
-/** Guards the "days since" copy on the prompt without another date import. */
-export function daysIntoWeek(today: ISODate = todayISO()): number {
-  return daysBetween(weekStart(today), today)
 }

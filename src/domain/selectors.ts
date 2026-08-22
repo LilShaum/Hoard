@@ -7,8 +7,8 @@ import { computeBudget, type BudgetView } from './budget'
 import { computePace, type Pace } from './pace'
 import { computeStreak, type StreakInfo } from './streak'
 import {
-  byMonth, depositDays as depositDaysOf, depositsOf, netOf, records as computeRecords,
-  isNewMoney, signed, spendOf, withdrawalsOf, type Records,
+  byMonth, depositDays as depositDaysOf, depositsOf, externalOnly, netOf,
+  records as computeRecords, isNewMoney, signed, spendOf, withdrawalsOf, type Records,
 } from './stats'
 import {
   levelForXp, nextRank as nextRankFor, rankForLevel, xpForDeposit, xpForVaultCompletion,
@@ -18,7 +18,9 @@ import { claimedQuestXp, generateQuests, type Quest } from './quests'
 import {
   achievementXp, evaluateAchievements, type AchFacts, type AchievementView,
 } from './achievements'
-import { planDistribution, shouldOfferDistribution, type Plan } from './allocate'
+import {
+  distributedThisWeek, planDistribution, shouldOfferDistribution, weeksOfRunway, type Plan,
+} from './allocate'
 
 /**
  * One function turns `State` into everything every screen needs. Nothing here is
@@ -97,6 +99,10 @@ export type Derived = {
   bankPlan: Plan
   /** Whether that plan should be surfaced — not yet taken this week, and non-empty. */
   offerDistribution: boolean
+  /** Whole weeks the Bank could keep funding the current plan. */
+  bankRunway: number
+  /** What this week's distribution already moved out of the Bank. */
+  distributedThisWeek: Cents
 }
 
 /** Chronological, then by insertion — the order money actually moved. */
@@ -181,6 +187,21 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
   const completedVaults = live.filter((v) => v.isComplete)
   const archivedVaults = vaults.filter((v) => v.archived)
 
+  /*
+   * Two streams from here on, and the split matters.
+   *
+   * `entries` is every movement, and every *balance* is computed from it —
+   * a Bank distribution really does move money, so the Bank falls and the
+   * vault rises.
+   *
+   * `external` drops both halves of those internal moves, and every measure of
+   * *behaviour* runs on it — quests, badges, streaks, records, the heatmap.
+   * Without the split, distributing to three vaults would read as three
+   * deposits (earning quests it did not deserve) while its matching Bank
+   * withdrawal would break a no-withdrawals badge it never actually broke.
+   */
+  const external = externalOnly(entries)
+
   const totalSaved = netOf(entries)
   const totalDeposited = depositsOf(entries)
   const totalWithdrawn = withdrawalsOf(entries)
@@ -190,11 +211,13 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
 
   const bankPlan = planDistribution(vaults, generalSaved)
   const offerDistribution = shouldOfferDistribution(bankPlan, state.progress.lastDistributedWeek, today)
+  const bankRunway = weeksOfRunway(bankPlan)
+  const sentThisWeek = distributedThisWeek(entries, today)
 
-  const depositDays = depositDaysOf(entries)
+  const depositDays = depositDaysOf(external)
   const streak = computeStreak(depositDays, today)
-  const monthly = byMonth(entries)
-  const records = computeRecords(entries)
+  const monthly = byMonth(external)
+  const records = computeRecords(external)
 
   /* ------------------------------------------------------------- this month */
   const mKey = monthKey(today)
@@ -218,7 +241,7 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
   }
 
   /* -------------------------------------------------------------------- XP */
-  const xpDeposits = depositXp(entries)
+  const xpDeposits = depositXp(external)
   const xpVaults = vaults
     .filter((v) => v.reachedAt != null)
     .reduce((sum, v) => sum + xpForVaultCompletion(v.target), 0)
@@ -233,9 +256,9 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
 
   const facts: AchFacts = {
     today,
-    entries,
-    deposits: entries.filter((e) => e.kind === 'deposit'),
-    withdrawals: entries.filter((e) => e.kind === 'withdrawal'),
+    entries: external,
+    deposits: external.filter((e) => e.kind === 'deposit'),
+    withdrawals: external.filter((e) => e.kind === 'withdrawal'),
     vaults: state.vaults,
     completedVaults: vaults.filter((v) => v.reachedAt != null),
     totalDeposited,
@@ -269,7 +292,7 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
 
   const quests = generateQuests({
     today,
-    entries,
+    entries: external,
     vaults: state.vaults,
     monthlyTarget: mTarget,
     weeklyLimit: state.profile.weeklyLimit,
@@ -309,6 +332,8 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
     hasData: entries.length > 0,
     bankPlan,
     offerDistribution,
+    bankRunway,
+    distributedThisWeek: sentThisWeek,
   }
 }
 
