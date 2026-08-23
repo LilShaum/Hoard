@@ -18,11 +18,18 @@
  *
  *  - **Body, neck and head are one silhouette.** A head placed over a body
  *    leaves a seam across the throat no matter how it is positioned.
- *  - **Appendages are open paths that land on that silhouette**, so nothing
- *    overlaps and nothing has to be hidden.
+ *  - **Appendages are open paths that land on that silhouette**, measured onto
+ *    it rather than guessed at, so joints close.
  *  - **One wash for the whole animal**, grouped and given its opacity as a
  *    group, so overlapping shapes composite once into a flat tint instead of
  *    stacking into darker patches.
+ *  - **Three depth layers, cut with masks.** The wash is deliberately
+ *    transparent, which means draw order alone hides nothing: paint the
+ *    eggshell over the hatchling and you still see the body straight through
+ *    it, which is not what a shell does. So `Figure` takes `back` (the far
+ *    wing, cut by the animal), `shapes` (the animal, cut by the front), and
+ *    `front` (the shell, the hoard). Without this the far wing ghosts through
+ *    the near wing's membrane and the tail runs through the coin stacks.
  *  - **A crest of spines down the nape.** More than any horn, this is what
  *    stops a long neck reading as a swan — which is exactly what it read as
  *    until the spines went on.
@@ -47,7 +54,7 @@
  * W_FINE merely because it is small.
  */
 
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useId } from 'react'
 
 export type Stage = 0 | 1 | 2 | 3 | 4
 
@@ -116,7 +123,7 @@ const FOOT = 'M48.8 85.7C53 90 61 91 66 88C69 86 65 82 60.3 80.5'
 const TOES = 'M56 89.4V86.8M61 88.2V85.6'
 
 /** The eggshell the hatchling is still sitting in. */
-const SHELL = 'M18 60C18 84 33 102 53 102C73 102 88 84 88 60C82 66 77 58 71 64C65 56 59 66 53 58C47 66 41 56 35 64C29 58 24 66 18 60Z'
+const SHELL = 'M22 57C22 79 35 95 53 95C71 95 84 79 84 57C79 63 74 55 69 61C64 54 58 63 53 56C48 63 42 54 37 61C32 55 27 62 22 57Z'
 
 /**
  * The hoard, drawn as stacks rather than discs. A lone ellipse outline in line
@@ -172,27 +179,77 @@ const SizeContext = createContext(64)
  * ink, then ink-only detail on top. `k` scales the whole figure, and stroke
  * widths are divided by it so line weight stays constant across the five
  * stages rather than thinning as the animal gets smaller.
+ *
+ * `occluder` is a shape that sits in *front* of the animal and hides what is
+ * behind it — the eggshell. It has to be a mask rather than just draw order,
+ * because the wash is deliberately transparent: painting the shell over the
+ * hatchling tints it slightly darker and leaves the body's outline showing
+ * straight through, which is not what a shell does. The occluder is cut out
+ * of everything behind it and then drawn once, in front, on its own.
  */
-function Figure({ shapes, k = 1, dx = 0, dy = 0, children }: {
+function Figure({ back, shapes, front, frontMarks, k = 1, dx = 0, dy = 0, children }: {
+  /** Behind the animal — the far wing. Cut by everything in `shapes`. */
+  back?: Shape[]
   shapes: Shape[]
+  /** In front of the animal — the eggshell, the hoard. Cuts everything before it. */
+  front?: Shape[]
+  /** Ink-only detail belonging to the front layer, such as the stack ridges. */
+  frontMarks?: React.ReactNode
   k?: number
   dx?: number
   dy?: number
   children?: React.ReactNode
 }) {
   const detailed = useContext(SizeContext) >= DETAIL_FROM
+  // Several creatures render on one screen, so each mask needs its own id.
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, '')
+
+  const wash = (list: Shape[]) => (
+    <g opacity={WASH} fill="currentColor" stroke="none">
+      {list.map((s, i) => <path key={i} d={s.d} />)}
+    </g>
+  )
+  const ink = (list: Shape[], extra?: React.ReactNode) => (
+    <g fill="none" stroke="currentColor" strokeWidth={W_MAIN / k}
+       strokeLinecap="round" strokeLinejoin="round">
+      {list.map((s, i) => (
+        <path key={i} d={s.d} strokeWidth={(s.w ?? W_MAIN) / k} opacity={s.o} />
+      ))}
+      {extra}
+    </g>
+  )
+
+  /** White everywhere, black over `hide` — so `hide` is punched out. */
+  const cutout = (id: string, hide: Shape[]) => (
+    <mask id={id} maskUnits="userSpaceOnUse" x="-60" y="-60" width="220" height="220">
+      <rect x="-60" y="-60" width="220" height="220" fill="#fff" />
+      {hide.map((s, i) => <path key={i} d={s.d} fill="#000" />)}
+    </mask>
+  )
+
+  const animal = (
+    <>
+      {wash(shapes)}
+      {ink(shapes, detailed && <g strokeWidth={W_FINE / k}>{children}</g>)}
+    </>
+  )
+
   return (
     <g transform={`translate(${dx} ${dy}) scale(${k})`}>
-      <g opacity={WASH} fill="currentColor" stroke="none">
-        {shapes.map((s, i) => <path key={i} d={s.d} />)}
-      </g>
-      <g fill="none" stroke="currentColor" strokeWidth={W_MAIN / k}
-         strokeLinecap="round" strokeLinejoin="round">
-        {shapes.map((s, i) => (
-          <path key={i} d={s.d} strokeWidth={(s.w ?? W_MAIN) / k} opacity={s.o} />
-        ))}
-        {detailed && <g strokeWidth={W_FINE / k}>{children}</g>}
-      </g>
+      {back && back.length > 0 && (
+        <>
+          {cutout(`${uid}b`, shapes)}
+          <g mask={`url(#${uid}b)`}>{wash(back)}{ink(back)}</g>
+        </>
+      )}
+      {front && front.length > 0 ? (
+        <>
+          {cutout(`${uid}f`, front)}
+          <g mask={`url(#${uid}f)`}>{animal}</g>
+          {wash(front)}
+          {ink(front, detailed && <g strokeWidth={W_FINE / k}>{frontMarks}</g>)}
+        </>
+      ) : animal}
     </g>
   )
 }
@@ -202,11 +259,10 @@ function Figure({ shapes, k = 1, dx = 0, dy = 0, children }: {
 /** Lv1 — just out, still sitting in the shell it broke. */
 function Hatchling() {
   return (
-    <Figure k={0.62} dx={17} dy={13} shapes={[
+    <Figure k={0.7} dx={13} dy={7} front={[{ d: SHELL }]} shapes={[
       { d: WING_BUD },
       { d: CREST_SMALL },
       { d: BODY },
-      { d: SHELL },
     ]}>
       <HeadMarks />
     </Figure>
@@ -233,8 +289,7 @@ function Whelp() {
 /** Lv15 — proportions settle. The form the others are read against. */
 function Drake() {
   return (
-    <Figure k={0.93} dx={3} dy={3} shapes={[
-      { d: WING_FAR, o: FAR },
+    <Figure k={0.93} dx={3} dy={3} back={[{ d: WING_FAR, o: FAR }]} shapes={[
       { d: WING },
       { d: TAIL },
       { d: CREST },
@@ -252,16 +307,13 @@ function Drake() {
 /** Lv28 — grown. The span opens out, and the first coins appear under it. */
 function Wyrm() {
   return (
-    <Figure k={0.94} dy={-6} shapes={[
-      { d: WING_FAR_WIDE, o: FAR },
+    <Figure k={0.94} dy={-6} back={[{ d: WING_FAR_WIDE, o: FAR }]} shapes={[
       { d: WING_WIDE },
       { d: TAIL },
       { d: CREST_TALL },
       { d: BODY },
       { d: FOOT },
-      { d: COINS_FEW },
-      { d: COIN_ONE },
-    ]}>
+    ]} front={[{ d: COINS_FEW }, { d: COIN_ONE }]}>
       <path d={TOES} />
       <path strokeWidth={W_FINE} d="M5 12L4 34M5 12L15 50" />
       <HeadMarks />
@@ -273,19 +325,15 @@ function Wyrm() {
 /** Lv45 — the guardian, sat on the hoard it kept. */
 function Sovereign() {
   return (
-    <Figure k={0.95} dy={-9} shapes={[
-      { d: WING_FAR_WIDE, o: FAR },
+    <Figure k={0.95} dy={-9} back={[{ d: WING_FAR_WIDE, o: FAR }]} shapes={[
       { d: WING_WIDE },
       { d: TAIL },
       { d: CREST_TALL },
       { d: BODY },
       { d: FOOT },
-      /* the hoard, spread along the floor beneath it */
-      { d: STACK_TALL },
-      { d: STACK_SHORT },
-      { d: COIN_FLAT },
-    ]}>
-      <path d={STACK_RIDGES} />
+      /* the hoard is in front of the feet and the tail, so it cuts them */
+    ]} front={[{ d: STACK_TALL }, { d: STACK_SHORT }, { d: COIN_FLAT }]}
+       frontMarks={<path d={STACK_RIDGES} />}>
       <path d={TOES} />
       <path strokeWidth={W_FINE} d="M5 12L4 34M5 12L15 50" />
       <HeadMarks />
