@@ -94,8 +94,31 @@ const WING_FAR_WIDE = 'M45 46C38 40 25 28 17 20Q21 29 16 36Q26 40 25 48Q34 44 39
 
 const TAIL = 'M28 83C20 87 9 84 7 74C6 66 12 60 17 62C13 65 12 70 15 74C19 79 25 80 29 76'
 
+/**
+ * A front foot poking out at the base. Without it the animal is a bag with a
+ * head on it — nothing touches the ground, so nothing has weight.
+ */
+const FOOT = 'M50 82C54 86 60 88 65 86C68 85 68 82 65 81'
+const TOES = 'M56 87V83M61 86V82'
+
 /** The eggshell the hatchling is still sitting in. */
 const SHELL = 'M24 60C24 75 35 88 48 88C61 88 72 75 72 60C68 64 63 58 59 63C55 57 50 65 46 59C42 65 37 57 33 63C30 58 27 64 24 60Z'
+
+/**
+ * The hoard, drawn as stacks rather than discs. A lone ellipse outline in line
+ * art reads as a ring or an egg; give it a side and a bottom and it is
+ * unmistakably a stack of coin. Everything here stays strictly below the body
+ * — the first attempt ran coins across the feet and it read as a puddle of
+ * loops rather than a pile of gold.
+ */
+const STACK_TALL = 'M20 90a8 3.6 0 1 0 16 0a8 3.6 0 1 0-16 0M20 90v7a8 3.6 0 0 0 16 0v-7'
+const STACK_SHORT = 'M41 93a7 3.2 0 1 0 14 0a7 3.2 0 1 0-14 0M41 93v5a7 3.2 0 0 0 14 0v-5'
+const COIN_FLAT = 'M59 95a7.5 3.4 0 1 0 15 0a7.5 3.4 0 1 0-15 0'
+const STACK_RIDGES = 'M20 93.5a8 3.6 0 0 0 16 0M41 95.5a7 3.2 0 0 0 14 0'
+
+/** One stack and one loose coin, for the stage where the hoard is just starting. */
+const COINS_FEW = 'M60 91a7.5 3.4 0 1 0 15 0a7.5 3.4 0 1 0-15 0M60 91v5a7.5 3.4 0 0 0 15 0v-5'
+const COIN_ONE = 'M40 95a7 3.2 0 1 0 14 0a7 3.2 0 1 0-14 0'
 
 /** Interior marks on the head. Ink only — they sit clear of every contour. */
 function HeadMarks() {
@@ -186,7 +209,9 @@ function Whelp() {
       { d: TAIL },
       { d: CREST_SMALL, w: W_FINE },
       { d: BODY },
+      { d: FOOT, w: W_FINE },
     ]}>
+      <path d={TOES} />
       <HeadMarks />
       <BodyMarks />
     </Figure>
@@ -202,7 +227,9 @@ function Drake() {
       { d: TAIL },
       { d: CREST, w: W_FINE },
       { d: BODY },
+      { d: FOOT, w: W_FINE },
     ]}>
+      <path d={TOES} />
       <path strokeWidth={W_FINE} d="M8 16L8 35M8 16L18 48" />
       <HeadMarks />
       <BodyMarks />
@@ -213,15 +240,17 @@ function Drake() {
 /** Lv28 — grown. The span opens out, and the first coins appear under it. */
 function Wyrm() {
   return (
-    <Figure shapes={[
+    <Figure k={0.94} dy={-6} shapes={[
       { d: WING_FAR_WIDE, w: W_FINE, o: 0.55 },
       { d: WING_WIDE },
       { d: TAIL },
       { d: CREST_TALL, w: W_FINE },
       { d: BODY },
-      { d: 'M14 88a7 3.4 0 1 0 14 0a7 3.4 0 1 0-14 0', w: W_FINE },
-      { d: 'M28 91a7 3.4 0 1 0 14 0a7 3.4 0 1 0-14 0', w: W_FINE },
+      { d: FOOT, w: W_FINE },
+      { d: COINS_FEW, w: W_FINE },
+      { d: COIN_ONE, w: W_FINE },
     ]}>
+      <path d={TOES} />
       <path strokeWidth={W_FINE} d="M5 12L4 34M5 12L15 50" />
       <HeadMarks />
       <BodyMarks />
@@ -232,18 +261,20 @@ function Wyrm() {
 /** Lv45 — the guardian, sat on the hoard it kept. */
 function Sovereign() {
   return (
-    <Figure k={1.04} dx={-2} dy={-3} shapes={[
+    <Figure k={0.95} dy={-9} shapes={[
       { d: WING_FAR_WIDE, w: W_FINE, o: 0.55 },
       { d: WING_WIDE },
       { d: TAIL },
       { d: CREST_TALL, w: W_FINE },
       { d: BODY },
-      /* the hoard: a bank of coin under the whole animal */
-      { d: 'M6 92C6 85 18 80 33 80C50 80 63 84 66 89C67 92 63 94 52 94H14C8 94 6 93 6 92Z' },
-      { d: 'M12 85a8 3.8 0 1 0 16 0a8 3.8 0 1 0-16 0', w: W_FINE },
-      { d: 'M30 88a8 3.8 0 1 0 16 0a8 3.8 0 1 0-16 0', w: W_FINE },
-      { d: 'M48 85a8 3.8 0 1 0 16 0a8 3.8 0 1 0-16 0', w: W_FINE },
+      { d: FOOT, w: W_FINE },
+      /* the hoard, spread along the floor beneath it */
+      { d: STACK_TALL, w: W_FINE },
+      { d: STACK_SHORT, w: W_FINE },
+      { d: COIN_FLAT, w: W_FINE },
     ]}>
+      <path d={STACK_RIDGES} />
+      <path d={TOES} />
       <path strokeWidth={W_FINE} d="M5 12L4 34M5 12L15 50" />
       <HeadMarks />
       <BodyMarks />
