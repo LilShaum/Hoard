@@ -3,6 +3,7 @@ import {
   distributedThisWeek, planDistribution, shouldOfferDistribution, weeksOfRunway,
 } from '../allocate'
 import { derive } from '../selectors'
+import { reducer } from '@/store/reducer'
 import { entry, state, vault } from './factory'
 import { isoWeekKey } from '../dates'
 
@@ -216,5 +217,39 @@ describe('a vault past its deadline', () => {
     expect(od.catchUp).toBe(true)
     expect(od.amount).toBe(50_000) // everything it still needs, because it is late
     expect(plan.allocations.find((a) => a.vaultId === 'v1')!.catchUp).toBe(false)
+  })
+})
+
+/**
+ * A transfer is two entries that must live and die together. Deleting one half
+ * used to leave the vault holding money that had never left the Bank, and the
+ * running total climbed on its own — a savings app inventing money.
+ */
+describe('deleting half a transfer', () => {
+  const tx = 'tx1'
+  const withSplit = () => state({
+    vaults: [v1],
+    entries: [
+      entry(TODAY, 20_000),
+      entry(TODAY, 5_000, { id: 'out', vaultId: null, kind: 'withdrawal', transferId: tx }),
+      entry(TODAY, 5_000, { id: 'in', vaultId: 'v1', kind: 'deposit', transferId: tx }),
+    ],
+  })
+
+  it('takes the other half with it, from either end', () => {
+    for (const id of ['out', 'in']) {
+      const after = d(reducer(withSplit(), { type: 'entry/delete', id }))
+      expect(after.totalSaved).toBe(20_000)     // no money invented, none destroyed
+      expect(after.generalSaved).toBe(20_000)   // the split is fully undone
+      expect(after.vaultById.get('v1')!.saved).toBe(0)
+      expect(after.entries).toHaveLength(1)
+    }
+  })
+
+  it('still deletes an ordinary entry on its own', () => {
+    const s = state({ entries: [entry(TODAY, 20_000, { id: 'a' }), entry(TODAY, 3_000, { id: 'b' })] })
+    const after = d(reducer(s, { type: 'entry/delete', id: 'b' }))
+    expect(after.totalSaved).toBe(20_000)
+    expect(after.entries).toHaveLength(1)
   })
 })

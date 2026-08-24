@@ -50,8 +50,13 @@ export function Activity({ navigate }: { navigate: (r: Route) => void }) {
   }, [filtered])
 
   const remove = (id: string, amount: number) => {
+    // Both halves of a Bank split go together, so say so rather than letting
+    // one tap silently remove two rows.
+    const isTransfer = d.entries.find((e) => e.id === id)?.transferId != null
     dispatch({ type: 'entry/delete', id })
-    toast(`${fmt.money(amount)} entry removed`)
+    toast(isTransfer
+      ? `Split of ${fmt.money(amount)} undone — money back in the Bank`
+      : `${fmt.money(amount)} entry removed`)
   }
 
   const sources: Array<{ key: string; label: string }> = [

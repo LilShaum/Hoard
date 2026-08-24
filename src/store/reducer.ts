@@ -42,8 +42,19 @@ export function reducer(state: State, action: Action): State {
         entries: state.entries.map((e) => (e.id === action.id ? { ...e, ...action.patch } : e)),
       }
 
-    case 'entry/delete':
-      return { ...state, entries: state.entries.filter((e) => e.id !== action.id) }
+    /**
+     * Deleting one half of a Bank transfer would invent money: remove the
+     * withdrawal and the vault keeps cash that never left the Bank, so the
+     * total climbs on its own. Both halves share a transferId and go together.
+     */
+    case 'entry/delete': {
+      const target = state.entries.find((e) => e.id === action.id)
+      const tx = target?.transferId
+      return {
+        ...state,
+        entries: state.entries.filter((e) => (tx ? e.transferId !== tx : e.id !== action.id)),
+      }
+    }
 
     case 'vault/add':
       return { ...state, vaults: [...state.vaults, action.vault] }

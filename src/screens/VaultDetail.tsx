@@ -230,7 +230,12 @@ export function VaultDetail({ vaultId, navigate, onLog }: Props) {
                   <button
                     className="btn btn--icon activity__del"
                     aria-label={`Delete entry of ${fmt.money(e.amount)}`}
-                    onClick={() => { dispatch({ type: 'entry/delete', id: e.id }); toast('Entry removed') }}
+                    onClick={() => {
+                      dispatch({ type: 'entry/delete', id: e.id })
+                      toast(e.transferId
+                        ? 'Split undone — money back in the Bank'
+                        : 'Entry removed')
+                    }}
                   >
                     <IconTrash size={14} />
                   </button>
