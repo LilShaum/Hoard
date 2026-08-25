@@ -526,6 +526,39 @@ await check('the Bank offers a weekly split into vaults, and taking it moves the
   await ctx.close()
 })
 
+/* --------------------------------------------------------------- backups */
+await check('an account with real history is told to back it up, and the nudge clears', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const bp = await ctx.newPage()
+  await bp.goto(BASE, { waitUntil: 'domcontentloaded' })
+  await bp.evaluate(() => localStorage.clear())
+  await bp.goto(BASE, { waitUntil: 'networkidle' })
+
+  // The demo account carries months of history and has never been exported.
+  await bp.waitForSelector('.onboard')
+  await bp.getByRole('button', { name: 'See a demo instead' }).click()
+  await settle(bp)
+  await bp.goto(`${BASE}#/home`, { waitUntil: 'networkidle' })
+  await bp.waitForTimeout(400)
+
+  const nudge = bp.getByText('Keep it safe')
+  await nudge.waitFor({ timeout: 4000 })
+  assert.match(await bp.locator('.panel', { hasText: 'Keep it safe' }).innerText(),
+    /lives on this phone/i)
+
+  // Taking a backup should retire it. Downloads are unavailable here, so use
+  // the copy path, which is the one that works on a phone anyway.
+  await bp.goto(`${BASE}#/profile`, { waitUntil: 'networkidle' })
+  await bp.getByRole('button', { name: 'Copy backup' }).click()
+  await bp.getByRole('button', { name: 'Copy to clipboard' }).click()
+  await bp.waitForTimeout(500)
+  await bp.goto(`${BASE}#/home`, { waitUntil: 'networkidle' })
+  await bp.waitForTimeout(400)
+  assert.equal(await bp.getByText('Keep it safe').count(), 0, 'the nudge outlived the backup')
+
+  await ctx.close()
+})
+
 await browser.close()
 
 console.log(`\n${passed} passed, ${failures.length} failed`)

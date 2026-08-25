@@ -190,6 +190,9 @@ export function sanitise(raw: any): State {
       lastDistributedWeek: typeof pr.lastDistributedWeek === 'string'
         ? pr.lastDistributedWeek
         : null,
+      lastBackupAt: typeof pr.lastBackupAt === 'number' && Number.isFinite(pr.lastBackupAt)
+        ? pr.lastBackupAt
+        : null,
     },
   }
 }

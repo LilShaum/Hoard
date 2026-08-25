@@ -17,6 +17,7 @@ export type Action =
   | { type: 'theme/unlock'; themes: ThemeKey[] }
   | { type: 'entries/add'; entries: Entry[] }
   | { type: 'bank/distributed'; week: string }
+  | { type: 'backup/done'; at: number }
   | { type: 'state/replace'; state: State }
 
 export function reducer(state: State, action: Action): State {
@@ -30,6 +31,9 @@ export function reducer(state: State, action: Action): State {
       return action.entries.length === 0
         ? state
         : { ...state, entries: [...state.entries, ...action.entries] }
+
+    case 'backup/done':
+      return { ...state, progress: { ...state.progress, lastBackupAt: action.at } }
 
     case 'bank/distributed':
       return state.progress.lastDistributedWeek === action.week

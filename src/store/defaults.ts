@@ -50,6 +50,7 @@ export function initialState(): State {
       seenLevel: 1,
       celebratedVaults: [],
       lastDistributedWeek: null,
+      lastBackupAt: null,
     },
   }
 }

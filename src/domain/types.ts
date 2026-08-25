@@ -104,6 +104,12 @@ export type ProgressState = {
   celebratedVaults: string[]
   /** ISO week of the last Bank distribution, so it is offered once a week. */
   lastDistributedWeek: string | null
+  /**
+   * Epoch ms of the last export, or null if there has never been one. A moment
+   * rather than a date, so "what has changed since" can be answered exactly
+   * against each entry's createdAt.
+   */
+  lastBackupAt: number | null
 }
 
 export type State = {

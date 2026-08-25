@@ -4,6 +4,7 @@ import { useFormat } from '@/app/format'
 import { Sheet } from '@/ui/Sheet'
 import { THEMES } from '@/app/themes'
 import { CURRENCIES } from '@/domain/money'
+import type { State } from '@/domain/types'
 import { exportState, importState } from '@/store/persist'
 import { initialState } from '@/store/defaults'
 import { demoState } from '@/store/demo'
@@ -57,6 +58,7 @@ export function Profile() {
     a.click()
     a.remove()
     setTimeout(() => URL.revokeObjectURL(url), 2_000)
+    dispatch({ type: 'backup/done', at: Date.now() })
     toast('Backup downloaded')
   }
 
@@ -64,11 +66,20 @@ export function Profile() {
     const json = backupText ?? exportState(state)
     try {
       await navigator.clipboard.writeText(json)
+      dispatch({ type: 'backup/done', at: Date.now() })
       toast('Backup copied to the clipboard')
     } catch {
       toast('Select the text and copy it')
     }
   }
+
+  /**
+   * Someone restoring is, at that instant, demonstrably holding a copy of
+   * exactly this state — so it counts as backed up. Without this, restoring an
+   * old file would fire the backup nudge immediately.
+   */
+  const markBackedUp = (s: State): State =>
+    ({ ...s, progress: { ...s.progress, lastBackupAt: Date.now() } })
 
   const restoreFromText = (text: string) => {
     const next = importState(text)
@@ -77,7 +88,7 @@ export function Profile() {
       return
     }
     suppressNextCelebration()
-    dispatch({ type: 'state/replace', state: next })
+    dispatch({ type: 'state/replace', state: markBackedUp(next) })
     setRestoreText(null)
     toast(`Restored ${next.entries.length} entries`)
   }
@@ -91,7 +102,7 @@ export function Profile() {
       return
     }
     suppressNextCelebration()
-    dispatch({ type: 'state/replace', state: next })
+    dispatch({ type: 'state/replace', state: markBackedUp(next) })
     toast(`Restored ${next.entries.length} entries`)
   }
 

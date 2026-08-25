@@ -61,6 +61,7 @@ export function state(over: Partial<State> = {}): State {
       seenLevel: 1,
       celebratedVaults: [],
       lastDistributedWeek: null,
+      lastBackupAt: null,
     },
     ...over,
   }

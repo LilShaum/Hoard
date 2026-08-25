@@ -335,6 +335,30 @@ export function Home({ onLog, navigate }: Props) {
         </section>
       )}
 
+      {/* ------------------------------------------------------- keep it safe */}
+      {d.backup.due && (
+        <section className="panel">
+          <header className="panel__head">
+            <span className="label">Keep it safe</span>
+          </header>
+          <div className="panel__body stack stack--sm">
+            <p className="small muted">
+              {d.backup.reason === 'never'
+                ? <>Everything Hoard knows lives on this phone and nowhere else.{' '}
+                    <span className="num">{d.backup.total}</span> entries would go with it if you
+                    ever cleared your browser data.</>
+                : <>Your last backup was <span className="num">{d.backup.daysSince}</span> days ago.{' '}
+                    <span className="num">{d.backup.unsaved}</span>{' '}
+                    {d.backup.unsaved === 1 ? 'entry' : 'entries'} logged since then exist only on
+                    this phone.</>}
+            </p>
+            <button className="btn btn--sm" onClick={() => navigate({ name: 'profile' })}>
+              Take a backup
+            </button>
+          </div>
+        </section>
+      )}
+
       {!d.hasData && (
         <section className="panel empty">
           <p className="empty__title">Your hoard starts at zero</p>
