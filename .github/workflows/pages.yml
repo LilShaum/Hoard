@@ -67,11 +67,18 @@ jobs:
         env:
           PAGES_BASE: /${{ github.event.repository.name }}/
         run: |
-          npx vite preview --port 4173 --strictPort &
+          # --host 127.0.0.1 is load-bearing. Without it vite binds to
+          # "localhost", which on the runner resolves to ::1 first, while curl
+          # and Playwright both ask for 127.0.0.1 — so the server comes up
+          # perfectly and is unreachable, and every test dies on a connection
+          # refused that looks nothing like the real cause.
+          npx vite preview --port 4173 --strictPort --host 127.0.0.1 &
           for i in $(seq 1 30); do
             curl -sf -o /dev/null "http://127.0.0.1:4173${PAGES_BASE}" && break
             sleep 1
           done
+          curl -sf -o /dev/null "http://127.0.0.1:4173${PAGES_BASE}" \
+            || { echo "preview never came up at ${PAGES_BASE}"; exit 1; }
           BASE="http://127.0.0.1:4173${PAGES_BASE}" node scripts/e2e.mjs
 
       - name: Configure Pages
