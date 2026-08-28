@@ -18,14 +18,14 @@
  *    points, the shell rim — show up too, so read the list rather than
  *    treating any output as failure. BODY should carry none.
  */
-import { chromium } from 'playwright'
+import { launch } from './browser.mjs'
 import { readFileSync } from 'node:fs'
 
 const src = readFileSync('src/ui/Creature.tsx', 'utf8')
 const consts = {}
 for (const m of src.matchAll(/^const ([A-Z_0-9]+) = '([^']+)'$/gm)) consts[m[1]] = m[2]
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
+const browser = await launch()
 const page = await browser.newPage()
 await page.setContent('<svg id="s" viewBox="0 0 96 96"></svg>')
 

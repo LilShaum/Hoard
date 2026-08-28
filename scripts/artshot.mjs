@@ -3,10 +3,10 @@
  *   node scripts/artshot.mjs 3
  * Sections are captured separately so each can be looked at closely.
  */
-import { chromium } from 'playwright'
+import { launch } from './browser.mjs'
 
 const focus = process.argv[2] ?? '2'
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
+const b = await launch()
 const p = await b.newPage({ viewport: { width: 1500, height: 1200 }, deviceScaleFactor: 2 })
 p.on('pageerror', (e) => console.log('ERR', e.message))
 await p.goto(`http://127.0.0.1:5199/sandbox/index.html?focus=${focus}`, { waitUntil: 'networkidle' })

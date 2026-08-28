@@ -1,6 +1,6 @@
-import { chromium } from 'playwright'
+import { launch } from './browser.mjs'
 const BASE = process.env.BASE ?? 'http://127.0.0.1:4173'
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
+const b = await launch()
 const p = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })
 const errs = []
 p.on('pageerror', e => errs.push(e.message))

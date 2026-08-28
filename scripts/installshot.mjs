@@ -1,6 +1,7 @@
-import { chromium, devices } from 'playwright'
+import { devices } from 'playwright'
+import { launch } from './browser.mjs'
 const BASE = 'http://127.0.0.1:4173'
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
+const b = await launch()
 
 // A real iPhone profile: iOS user agent, touch points, mobile viewport.
 const iphone = await b.newContext({ ...devices['iPhone 13'] })

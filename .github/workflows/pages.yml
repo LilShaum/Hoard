@@ -53,6 +53,27 @@ jobs:
         env:
           PAGES_BASE: /${{ github.event.repository.name }}/
 
+      # The browser suite had never run here — only the unit tests had — so
+      # every deploy went out on the word of a run on somebody's machine. It
+      # runs against the built sub-path site, which is the exact shape Pages
+      # serves, because that is where a wrong base path shows up and nowhere
+      # else. `vite preview` needs the same PAGES_BASE as the build: without
+      # it, preview serves at / while index.html asks for /<repo>/assets, the
+      # script 404s and the page comes up blank.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser suite against the built site
+        env:
+          PAGES_BASE: /${{ github.event.repository.name }}/
+        run: |
+          npx vite preview --port 4173 --strictPort &
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null "http://127.0.0.1:4173${PAGES_BASE}" && break
+            sleep 1
+          done
+          BASE="http://127.0.0.1:4173${PAGES_BASE}" node scripts/e2e.mjs
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:

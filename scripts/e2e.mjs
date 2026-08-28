@@ -2,11 +2,12 @@
  * End-to-end smoke test against the real built app in a real browser.
  * The unit suite proves the engine; this proves the thing people touch.
  */
-import { chromium, devices } from 'playwright'
+import { devices } from 'playwright'
+import { launch } from './browser.mjs'
 import assert from 'node:assert/strict'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:4173'
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
+const browser = await launch()
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
 page.setDefaultTimeout(6000)
 

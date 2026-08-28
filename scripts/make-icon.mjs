@@ -5,7 +5,7 @@
  * screenshot of the page — which makes a home-screen install look broken. The
  * square is drawn full-bleed because iOS applies its own squircle mask.
  */
-import { chromium } from 'playwright'
+import { launch } from './browser.mjs'
 import { writeFileSync } from 'node:fs'
 
 const INK = '#131a17'
@@ -20,7 +20,7 @@ const svg = `
   <circle cx="90" cy="90" r="20" fill="${ACCENT}"/>
 </svg>`
 
-const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
+const browser = await launch()
 const page = await browser.newPage({ viewport: { width: SIZE, height: SIZE } })
 await page.setContent(
   `<style>html,body{margin:0;padding:0;background:${INK}}svg{display:block}</style>${svg}`,
