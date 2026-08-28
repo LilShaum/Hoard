@@ -570,6 +570,70 @@ await check('an account with real history is told to back it up, and the nudge c
   await ctx.close()
 })
 
+/* --------------------------------------------------------------- offline */
+/**
+ * Hoard is installed to a home screen and holds every entry in localStorage on
+ * that same phone, so needing a connection to *boot* meant a blank screen in
+ * front of data already on the device. Nothing caught that for weeks, because
+ * every other assertion here runs against a live server.
+ */
+await check('the installed app opens with no connection', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const op = await ctx.newPage()
+  await op.goto(BASE, { waitUntil: 'networkidle' })
+
+  // The worker has to be installed and in control before it can serve anything.
+  const controlled = await op.evaluate(() => {
+    // Raced against a deadline in the page: if no worker ever takes control
+    // this has to fail the assertion below, not block the run forever.
+    const ready = (async () => {
+      await navigator.serviceWorker.ready
+      if (!navigator.serviceWorker.controller) {
+        await new Promise((r) =>
+          navigator.serviceWorker.addEventListener('controllerchange', r, { once: true }))
+      }
+      return true
+    })()
+    return Promise.race([ready, new Promise((r) => setTimeout(() => r(false), 15000))])
+  })
+  assert.ok(controlled, 'no service worker took control, so the app cannot open offline')
+
+  await op.evaluate(() => localStorage.setItem('hoard-offline-probe', 'survived'))
+  await ctx.setOffline(true)
+
+  // A cold launch from the home screen, with the network gone.
+  const cold = await ctx.newPage()
+  await cold.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 20000 })
+  await cold.waitForTimeout(1200)
+  const text = await cold.locator('body').innerText()
+  assert.ok(text.trim().length > 0, 'the app was a blank screen offline')
+  assert.match(text, /Hoard/, 'the app rendered offline but not recognisably')
+  assert.equal(
+    await cold.evaluate(() => localStorage.getItem('hoard-offline-probe')),
+    'survived',
+    'saved data did not survive an offline launch')
+
+  await ctx.close()
+})
+
+await check('offline caching keeps exactly one version', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const cp = await ctx.newPage()
+  await cp.goto(BASE, { waitUntil: 'networkidle' })
+  const ready = await cp.evaluate(() =>
+    Promise.race([
+      navigator.serviceWorker.ready.then(() => true),
+      new Promise((r) => setTimeout(() => r(false), 15000)),
+    ]))
+  assert.ok(ready, 'no service worker registered')
+  await cp.waitForTimeout(2500)
+  // Stale caches accumulating on every deploy would eat the storage budget the
+  // app's own savings history lives in.
+  const keys = await cp.evaluate(() => caches.keys())
+  assert.equal(keys.length, 1, `expected one cache, found ${keys.length}: ${keys.join(', ')}`)
+  await ctx.close()
+})
+
 await browser.close()
 
 console.log(`\n${passed} passed, ${failures.length} failed`)
