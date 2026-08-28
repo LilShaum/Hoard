@@ -529,7 +529,15 @@ await check('the Bank offers a weekly split into vaults, and taking it moves the
 
 /* --------------------------------------------------------------- backups */
 await check('an account with real history is told to back it up, and the nudge clears', async () => {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  // clipboard-write is load-bearing, not a convenience. Without the grant
+  // navigator.clipboard.writeText rejects, the app takes its honest fallback
+  // ("select the text and copy it") and records no backup — so the nudge
+  // stays, exactly as it should, and the assertion below fails for a reason
+  // that has nothing to do with what this test is checking.
+  const ctx = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    permissions: ['clipboard-write'],
+  })
   const bp = await ctx.newPage()
   await bp.goto(BASE, { waitUntil: 'domcontentloaded' })
   await bp.evaluate(() => localStorage.clear())
@@ -552,7 +560,9 @@ await check('an account with real history is told to back it up, and the nudge c
   await bp.goto(`${BASE}#/profile`, { waitUntil: 'networkidle' })
   await bp.getByRole('button', { name: 'Copy backup' }).click()
   await bp.getByRole('button', { name: 'Copy to clipboard' }).click()
-  await bp.waitForTimeout(500)
+  // Wait for the outcome rather than a guessed delay: the success toast is
+  // the only signal that the copy landed and the backup was recorded.
+  await bp.getByText('Backup copied to the clipboard').waitFor({ timeout: 4000 })
   await bp.goto(`${BASE}#/home`, { waitUntil: 'networkidle' })
   await bp.waitForTimeout(400)
   assert.equal(await bp.getByText('Keep it safe').count(), 0, 'the nudge outlived the backup')
