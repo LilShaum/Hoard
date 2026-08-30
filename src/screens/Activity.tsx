@@ -104,7 +104,11 @@ export function Activity({ navigate }: { navigate: (r: Route) => void }) {
               </button>
             ))}
         </div>
-        <div className="row row--tight row--wrap">
+        {/* One vault per chip, so this row grows with the account. Wrapped, a
+            handful of vaults pushed three lines of filters above the first
+            transaction — the ledger's own content driven off the screen by
+            the controls for reading it. It scrolls sideways instead. */}
+        <div className="chiprow">
           {sources.map((s) => (
             <button key={s.key} className="chip" aria-pressed={source === s.key} onClick={() => setSource(s.key)}>
               {s.label}

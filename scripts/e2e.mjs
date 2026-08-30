@@ -51,7 +51,7 @@ const moneyOn = async (p) =>
   Number((await p.locator('.hoard__total').first().innerText()).replace(/[^\d.]/g, ''))
 const money = async () => moneyOn(page)
 
-const saveOn = async (p, amount, button = 'Log something', confirm = 'Save it') => {
+const saveOn = async (p, amount, button = /Log (something|your first deposit)/, confirm = 'Save it') => {
   await settle(p)
   await p.getByRole('button', { name: button }).click()
   await p.getByLabel('Amount', { exact: true }).fill(amount)
@@ -206,7 +206,7 @@ await check('deleting a vault keeps its money in the Bank', async () => {
 /* --------------------------------------------------------- accessibility */
 await check('Escape closes a sheet', async () => {
   await settle()
-  await page.getByRole('button', { name: 'Log something' }).click()
+  await page.getByRole('button', { name: /Log (something|your first deposit)/ }).click()
   await page.waitForSelector('.sheet')
   await page.keyboard.press('Escape')
   await page.waitForTimeout(400)
@@ -214,7 +214,7 @@ await check('Escape closes a sheet', async () => {
 })
 
 await check('a sheet moves focus to its first control', async () => {
-  await page.getByRole('button', { name: 'Log something' }).click()
+  await page.getByRole('button', { name: /Log (something|your first deposit)/ }).click()
   await page.waitForTimeout(500)
   assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), 'Amount')
   await page.keyboard.press('Escape')
@@ -273,7 +273,7 @@ await check('a spend never touches the hoard and shows in the week panel', async
   await settle()
   await go('home')
   const hoardBefore = await money()
-  await page.getByRole('button', { name: 'Log something' }).click()
+  await page.getByRole('button', { name: /Log (something|your first deposit)/ }).click()
   await page.getByRole('button', { name: 'Spent', exact: true }).click()
   await page.getByLabel('Amount', { exact: true }).fill('12.25')
   await page.getByRole('button', { name: 'Log it' }).click()

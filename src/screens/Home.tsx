@@ -90,6 +90,10 @@ export function Home({ onLog, navigate }: Props) {
               {d.streak.freezes} freeze{d.streak.freezes === 1 ? '' : 's'}
             </span>
           )}
+          {/* A bare 0 never says what would make it a 1. */}
+          {d.streak.current === 0 && d.streak.freezes === 0 && (
+            <span className="tiny faint">save once to start</span>
+          )}
         </div>
       </section>
 
@@ -122,12 +126,22 @@ export function Home({ onLog, navigate }: Props) {
                   tall
                   label="Monthly deposit goal"
                 />
+                {/* With nothing logged, "behind an even pace" is the first
+                    sentence a new account ever reads: a verdict of failure
+                    for not having done a thing it has not been given the
+                    chance to do. Nobody is behind before they have started.
+                    The same facts, minus the judgement, and pointed at the
+                    one action that changes them. */}
                 <p className="tiny faint">
                   {d.month.hit
                     ? 'Goal met — everything from here is a bonus.'
-                    : d.month.onPace
-                      ? `Ahead of an even pace. ${fmt.money(d.month.remaining)} left, ${plural(d.month.daysLeft, 'day')} to go.`
-                      : `Behind an even pace. ${fmt.money(d.month.remaining)} left in ${plural(d.month.daysLeft, 'day')}.`}
+                    : d.entries.length === 0
+                      ? `Your first deposit starts this month off — ${fmt.money(d.month.target)} is the goal.`
+                      : d.month.saved === 0
+                        ? `Nothing logged this month yet — ${fmt.money(d.month.remaining)} to go, ${plural(d.month.daysLeft, 'day')} left.`
+                        : d.month.onPace
+                          ? `Ahead of an even pace. ${fmt.money(d.month.remaining)} left, ${plural(d.month.daysLeft, 'day')} to go.`
+                          : `Behind an even pace. ${fmt.money(d.month.remaining)} left in ${plural(d.month.daysLeft, 'day')}.`}
                 </p>
               </>
             ) : (
@@ -138,7 +152,10 @@ export function Home({ onLog, navigate }: Props) {
           </div>
 
           <button className="btn btn--primary btn--block" onClick={() => onLog(null)}>
-            <IconPlus size={17} /> Log something
+            {/* On an empty account this is the only thing to do on the
+                screen, and "Log something" reads like placeholder text left
+                in by mistake. Name the actual first step. */}
+            <IconPlus size={17} /> {d.entries.length === 0 ? 'Log your first deposit' : 'Log something'}
           </button>
         </div>
       </section>

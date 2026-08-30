@@ -375,6 +375,22 @@ h1, h2, h3 {
 .seg--wrap .seg__opt { flex: 1 1 auto; }
 
 /* Chips — non-exclusive, or a scrolling list of many. */
+/* A single line of chips that runs off the edge rather than wrapping. The
+   negative margin lets the row bleed to the screen edge, so a half-visible
+   chip at the boundary reads as "there is more this way". */
+.chiprow {
+  display: flex;
+  gap: var(--sp-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 calc(var(--sp-4) * -1);
+  padding: 0 var(--sp-4);
+}
+
+.chiprow::-webkit-scrollbar { display: none; }
+.chiprow > .chip { flex: none; }
+
 .chip {
   display: inline-flex;
   align-items: center;

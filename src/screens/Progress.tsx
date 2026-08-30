@@ -44,15 +44,6 @@ export function Progress() {
   const stage = stageForLevel(d.level.level)
   const evolvesAt = nextStage(d.level.level)
 
-  if (!d.hasData) {
-    return (
-      <div className="panel empty">
-        <p className="empty__title">Nothing to chart yet</p>
-        <p className="small">Log a few deposits and this page fills with your own history.</p>
-      </div>
-    )
-  }
-
   return (
     <div className="stack stack--lg">
       {/* ---------------------------------------------------- rank & companion */}
@@ -116,14 +107,34 @@ export function Progress() {
         </div>
       </section>
 
-      {/* ------------------------------------------------------------- charts */}
-      <SavingsArea points={cumulative} money={fmt.compact} total={d.totalSaved} />
-      <MonthlyBars points={months} money={fmt.compact} target={d.month.target || undefined} />
-      {d.totalSpent > 0 && (
-        <SpendBars weeks={spendWeeks} limit={d.budget.limit} money={fmt.compact} />
+      {/* -------------------------------------------------------------- charts
+          Only the charts need history. This screen used to return a single
+          "Nothing to chart yet" card in place of everything, which meant a new
+          account opened Progress and was shown none of its rank, none of its
+          companion, none of the evolution line it is saving towards, and not
+          even the badge it had just earned — the whole reason the tab is
+          worth opening on day one. */}
+      {d.hasData ? (
+        <>
+          <SavingsArea points={cumulative} money={fmt.compact} total={d.totalSaved} />
+          <MonthlyBars points={months} money={fmt.compact} target={d.month.target || undefined} />
+          {d.totalSpent > 0 && (
+            <SpendBars weeks={spendWeeks} limit={d.budget.limit} money={fmt.compact} />
+          )}
+          <Heatmap grid={heat} money={fmt.money} />
+          <Donut slices={slices} money={fmt.money} />
+        </>
+      ) : (
+        <section className="panel">
+          <header className="panel__head"><span className="label">Charts</span></header>
+          <div className="panel__body">
+            <p className="small muted">
+              Your first deposit starts the charts — what you have saved over time,
+              how each month compares, and which vaults it went to.
+            </p>
+          </div>
+        </section>
       )}
-      <Heatmap grid={heat} money={fmt.money} />
-      <Donut slices={slices} money={fmt.money} />
 
       {/* ------------------------------------------------------------ records */}
       <section className="panel">
