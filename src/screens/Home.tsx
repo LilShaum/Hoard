@@ -68,7 +68,7 @@ export function Home({ onLog, navigate }: Props) {
       {/* ---------------------------------------------------------- companion */}
       <section className="panel companion">
         <div className="companion__art" style={{ color: 'var(--accent)' }}>
-          <Creature stage={stage} size={62} title={`${stageName(stage)}, your companion`} />
+          <Creature stage={stage} size={64} title={`${stageName(stage)}, your companion`} />
         </div>
         <div className="grow">
           <p className="label">{greeting(name)}</p>
@@ -83,9 +83,11 @@ export function Home({ onLog, navigate }: Props) {
         <div className="companion__streak">
           <span className="num companion__streak-num">{d.streak.current}</span>
           <span className="label">{d.streak.current === 1 ? 'week' : 'weeks'}</span>
+          {/* "held" meant nothing on its own, and the title that explained it
+              never appears on a phone. Name the thing instead. */}
           {d.streak.freezes > 0 && (
-            <span className="tiny faint num" title="Streak freezes banked">
-              {d.streak.freezes} held
+            <span className="tiny faint num" title="A freeze protects your streak on a week you miss">
+              {d.streak.freezes} freeze{d.streak.freezes === 1 ? '' : 's'}
             </span>
           )}
         </div>

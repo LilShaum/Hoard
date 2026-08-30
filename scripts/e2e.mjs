@@ -323,6 +323,34 @@ await check('an entry can be deleted from the ledger', async () => {
   assert.equal(await page.locator('.activity').count(), before - 1)
 })
 
+/**
+ * The delete control sits on every row of a list hundreds long, and a ledger
+ * row is a financial record. The undo it offers has to actually be reachable:
+ * the toast layer is pointer-events:none so a passing message never eats a tap,
+ * which had left this button visible, styled and completely inert.
+ */
+await check('a deleted entry can be put back, and the total comes back with it', async () => {
+  // The previous test's own undo offer lives for seven seconds. Start from a
+  // clear toast layer so "is there an Undo on screen" means this delete's.
+  await page.waitForFunction(() => document.querySelectorAll('.toast').length === 0,
+    undefined, { timeout: 12000 })
+  const before = await page.locator('.activity').count()
+  const totalOf = () => page.locator('.activity-total, .panel .num').first().innerText()
+  const totalBefore = await totalOf()
+
+  await page.locator('.activity__del').first().click()
+  await page.waitForTimeout(400)
+  assert.equal(await page.locator('.activity').count(), before - 1, 'the row did not go')
+
+  const undo = page.getByRole('button', { name: 'Undo' })
+  assert.equal(await undo.count(), 1, 'no undo was offered')
+  await undo.click({ timeout: 4000 })
+  await page.waitForTimeout(500)
+
+  assert.equal(await page.locator('.activity').count(), before, 'the row did not come back')
+  assert.equal(await totalOf(), totalBefore, 'the money did not come back with the row')
+})
+
 /* --------------------------------------------------- sandboxed embedding */
 await check('a sandboxed embed offers a copyable backup instead of a dead download', async () => {
   const frame = await browser.newPage({ viewport: { width: 420, height: 900 } })

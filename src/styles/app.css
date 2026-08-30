@@ -90,6 +90,11 @@ h1, h2, h3 {
   letter-spacing: -0.035em;
 }
 
+/* For a sentence that happens to contain figures. The monospace is for a
+   figure standing on its own as an instrument reading; set a whole phrase in
+   it and the line grows wide enough to wrap in the middle of itself. */
+.figs { font-variant-numeric: tabular-nums; }
+
 .muted { color: var(--ink-2); }
 .faint { color: var(--ink-3); }
 .tiny { font-size: 11.5px; }
@@ -340,25 +345,34 @@ h1, h2, h3 {
 .btn--link:hover { color: var(--ink); background: none; }
 
 /* Segmented control — used wherever a choice is exclusive. */
+/* The options divide the control between them rather than hugging their text.
+   Sized to content, a three-option group left a band of dead panel to the
+   right of "Archived" that read as a row that had failed to finish drawing. */
 .seg {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   border: var(--bw) solid var(--rule);
   border-radius: var(--r-2);
   overflow: hidden;
 }
 
 .seg__opt {
+  flex: 1 1 0;
   padding: var(--sp-2) var(--sp-3);
   font-size: 12.5px;
   font-weight: 600;
   color: var(--ink-2);
   background: var(--panel);
   white-space: nowrap;
+  text-align: center;
 }
 
 .seg__opt + .seg__opt { border-left: 1px solid var(--rule); }
 .seg__opt[aria-pressed='true'] { background: var(--ink); color: var(--panel); }
 .seg--wrap { flex-wrap: wrap; border-radius: var(--r-2); }
+/* Wrapping groups size to their labels, so a wrapped row does not leave one
+   option stretched across a line of its own. */
+.seg--wrap .seg__opt { flex: 1 1 auto; }
 
 /* Chips — non-exclusive, or a scrolling list of many. */
 .chip {
@@ -381,14 +395,21 @@ h1, h2, h3 {
 
 /* -------------------------------------------------------------- type chip */
 
+/* The vault's type, in the spirit of the creature types this app borrows from.
+   It was a saturated filled chip, which made a decorative label the loudest
+   thing on a row whose subject is money — five of them down the vaults list
+   read as a highlighter set. Carrying the hue in the text and a hairline over
+   a wash keeps the type legible and identifiable while letting the balance
+   lead. */
 .tchip {
   display: inline-flex;
   align-items: center;
   height: 18px;
   padding: 0 6px;
   border-radius: var(--r-1);
-  background: var(--tc);
-  color: var(--tc-ink);
+  background: color-mix(in srgb, var(--tc) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tc) 38%, transparent);
+  color: color-mix(in srgb, var(--tc) 72%, var(--ink));
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -649,6 +670,29 @@ h1, h2, h3 {
   animation: slide-up var(--dur) var(--ease);
 }
 
+/* The undo affordance sits inside the toast, so it has to read as a control
+   against the ink slab without becoming the loudest thing on the screen. */
+.toast__action {
+  flex: none;
+  /* .toasts is pointer-events:none so a passing acknowledgement never eats a
+     tap meant for the screen behind it. That silently made this button
+     unclickable: visible, styled, and inert. Only the control takes events
+     back — the slab around it stays transparent to touch. */
+  pointer-events: auto;
+  padding: 2px var(--sp-2);
+  margin: -2px 0;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: var(--r-1);
+  color: var(--plane);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-variation-settings: 'wdth' var(--wide);
+}
+
+.toast__action:active { background: rgba(255, 255, 255, 0.16); }
+
 .toast__xp {
   margin-left: auto;
   font-family: var(--font-num);
@@ -707,14 +751,14 @@ body[data-reduce-motion='true'] *::after {
   padding: var(--sp-3);
 }
 
+/* No frame around the companion. A sunken fill and a hairline border read as
+   a thumbnail that failed to load — and the drawing is a field-guide plate
+   meant to sit on the page, not a picture hung on it. */
 .companion__art {
   flex: none;
   display: grid;
   place-items: center;
-  width: 68px; height: 68px;
-  background: var(--sunken);
-  border: 1px solid var(--rule-soft);
-  border-radius: var(--r-2);
+  width: 66px; height: 66px;
 }
 
 .companion__rank {
@@ -956,14 +1000,36 @@ body[data-reduce-motion='true'] *::after {
   border-radius: var(--r-1);
 }
 
+/* A control, not a notice: it counts what is ready and claims it. */
 .claimbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
   padding: var(--sp-2) var(--sp-3);
   background: var(--accent-soft);
   border-left: 3px solid var(--accent);
   border-radius: var(--r-1);
   font-size: 13px;
   font-weight: 600;
+  text-align: left;
+  color: var(--ink);
 }
+
+.claimbar__go {
+  flex: none;
+  padding: 2px var(--sp-2);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-1);
+  color: var(--accent);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-variation-settings: 'wdth' var(--wide);
+}
+
+.claimbar:active { background: color-mix(in srgb, var(--accent) 20%, transparent); }
 
 /* -------------------------------------------------------------- activity */
 
@@ -1106,10 +1172,7 @@ body[data-reduce-motion='true'] *::after {
 .rankcard__art {
   flex: none;
   display: grid; place-items: center;
-  width: 88px; height: 88px;
-  background: var(--sunken);
-  border: 1px solid var(--rule-soft);
-  border-radius: var(--r-2);
+  width: 104px; height: 104px;
 }
 
 .rankcard__name {
@@ -1120,7 +1183,7 @@ body[data-reduce-motion='true'] *::after {
 }
 
 .xprow { display: flex; align-items: center; gap: var(--sp-3); }
-.xprow__bar { width: 84px; flex: none; }
+.xprow__bar { width: 108px; flex: none; }
 .xprow__val { min-width: 44px; text-align: right; }
 
 .ladder { display: flex; flex-direction: column; }
@@ -1160,10 +1223,7 @@ body[data-reduce-motion='true'] *::after {
 
 .evoline__art {
   display: grid; place-items: center;
-  width: 52px; height: 52px;
-  background: var(--sunken);
-  border: 1px solid var(--rule-soft);
-  border-radius: var(--r-2);
+  width: 56px; height: 56px;
 }
 
 /* ---------------------------------------------------------------- themes */

@@ -132,9 +132,26 @@ type VaultCardProps = {
   onOpen: () => void
 }
 
+/**
+ * A vault's hue, in two strengths.
+ *
+ * `tint` is the identity: the glyph and the type chip, a few square millimetres
+ * where a saturated hue reads as a label. `bar` is the same hue pulled toward
+ * the neutral ink for anything that fills real area. At full strength across a
+ * whole progress bar the eight type hues stopped being identity and became a
+ * highlighter set, which is the loudest thing on a screen whose subject is the
+ * balance printed beside it.
+ */
+export function vaultTint(type: TypeKey) {
+  return {
+    tint: `var(--t-${type})`,
+    bar: `color-mix(in srgb, var(--t-${type}) 62%, var(--ink-2))`,
+  }
+}
+
 export function VaultCard({ vault, money, onOpen }: VaultCardProps) {
   const { pace } = vault
-  const tint = `var(--t-${vault.type})`
+  const { tint, bar } = vaultTint(vault.type)
 
   return (
     <button
@@ -166,7 +183,7 @@ export function VaultCard({ vault, money, onOpen }: VaultCardProps) {
         {vault.target != null && (
           <Notch
             value={pace.fraction}
-            color={tint}
+            color={bar}
             label={`${Math.round(pace.fraction * 100)}% of ${vault.name}`}
           />
         )}

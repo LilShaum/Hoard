@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
-export type Toast = { id: number; text: string; xp?: number }
+export type ToastAction = { label: string; run: () => void }
+export type Toast = { id: number; text: string; xp?: number; action?: ToastAction }
 
 let items: Toast[] = []
 let nextId = 1
@@ -11,16 +12,21 @@ const subscribe = (l: () => void) => { listeners.add(l); return () => { listener
 const snapshot = () => items
 
 const TTL = 2800
+/* An offer you have to read, understand and reach for needs longer than an
+   acknowledgement you only have to notice. */
+const TTL_ACTION = 7000
 const MAX = 3
 
-export function toast(text: string, xp?: number): void {
-  const t: Toast = { id: nextId++, text, xp }
+const dismiss = (id: number) => {
+  items = items.filter((x) => x.id !== id)
+  emit()
+}
+
+export function toast(text: string, xp?: number, action?: ToastAction): void {
+  const t: Toast = { id: nextId++, text, xp, action }
   items = [...items, t].slice(-MAX)
   emit()
-  setTimeout(() => {
-    items = items.filter((x) => x.id !== t.id)
-    emit()
-  }, TTL)
+  setTimeout(() => dismiss(t.id), action ? TTL_ACTION : TTL)
 }
 
 export function ToastHost() {
@@ -32,6 +38,14 @@ export function ToastHost() {
         <div className="toast" key={t.id}>
           <span className="grow">{t.text}</span>
           {t.xp != null && <span className="toast__xp">+{t.xp} XP</span>}
+          {t.action && (
+            <button
+              className="toast__action"
+              onClick={() => { t.action?.run(); dismiss(t.id) }}
+            >
+              {t.action.label}
+            </button>
+          )}
         </div>
       ))}
     </div>

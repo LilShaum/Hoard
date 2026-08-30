@@ -33,6 +33,24 @@ export function Quests() {
     toast('Quest claimed', xp)
   }
 
+  /**
+   * Seven finished quests meant seven trips down the page to tap seven Claim
+   * buttons for a reward already earned. The banner counting them was a
+   * statement where the obvious control belonged.
+   */
+  const claimAll = () => {
+    const ready = d.quests.filter((q) => q.claimable)
+    if (ready.length === 0) return
+    const date = todayISO()
+    for (const q of ready) dispatch({ type: 'quest/claim', id: q.id, date })
+    soundClaim()
+    haptic([8, 24, 8])
+    toast(
+      `${ready.length} ${ready.length === 1 ? 'quest' : 'quests'} claimed`,
+      ready.reduce((sum, q) => sum + q.xp, 0),
+    )
+  }
+
   const openEditor = (which: Exclude<Editing, null>) => {
     const current = which === 'monthly' ? profile.monthlyTarget : profile.weeklyLimit
     setRaw(current > 0 ? String(current / 100) : '')
@@ -151,9 +169,12 @@ export function Quests() {
 
       {/* ------------------------------------------------------------ quests */}
       {claimable > 0 && (
-        <p className="claimbar">
-          {claimable} {claimable === 1 ? 'reward' : 'rewards'} ready to claim
-        </p>
+        <button className="claimbar" onClick={claimAll}>
+          <span className="grow">
+            {claimable} {claimable === 1 ? 'reward' : 'rewards'} ready to claim
+          </span>
+          <span className="claimbar__go">Claim all</span>
+        </button>
       )}
 
       {TIERS.map(({ key, title, blurb }) => {

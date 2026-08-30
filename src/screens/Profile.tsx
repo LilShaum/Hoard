@@ -158,8 +158,8 @@ export function Profile() {
             ))}
           </div>
           <p className="tiny faint">
-            Both are designed rather than inverted — the eight type colours are stepped
-            separately for each so a vault stays legible either way.
+            Match device follows your phone's own light and dark setting, including
+            the overnight switch if you have one scheduled.
           </p>
         </div>
       </section>

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useHoard } from '@/store/store'
 import { useFormat } from '@/app/format'
 import { Creature, nextStage, stageForLevel, stageName, STAGE_AT_LEVEL } from '@/ui/Creature'
-import { AchievementTile, Notch } from '@/ui/parts'
+import { AchievementTile, Meter, Notch } from '@/ui/parts'
 import { Donut, Heatmap, MonthlyBars, SavingsArea, SpendBars, type Slice } from '@/charts/Charts'
 import { cumulativeSeries, heatmap, monthlySeries } from '@/domain/stats'
 import { weeklySpend } from '@/domain/budget'
@@ -63,16 +63,16 @@ export function Progress() {
         </header>
         <div className="panel__body rankcard">
           <div className="rankcard__art" style={{ color: 'var(--accent)' }}>
-            <Creature stage={stage} size={80} title={`${stageName(stage)}, your companion`} />
+            <Creature stage={stage} size={100} title={`${stageName(stage)}, your companion`} />
           </div>
           <div className="grow stack stack--sm">
             <div>
               <h2 className="rankcard__name">{d.rank.name}</h2>
-              <p className="tiny faint num">Level {d.level.level} · {stageName(stage)}</p>
+              <p className="tiny faint figs">Level {d.level.level} · {stageName(stage)}</p>
             </div>
             <p className="small muted">{d.rank.blurb}</p>
             <Notch value={d.level.progress} cells={12} thin label="Progress to the next level" />
-            <p className="tiny faint num">
+            <p className="tiny faint figs">
               {d.level.isMax
                 ? 'Maximum level'
                 : `${d.level.xpToNext.toLocaleString()} XP to level ${d.level.level + 1}`}
@@ -96,11 +96,19 @@ export function Progress() {
           ] as const)
             .filter(([, v]) => v > 0)
             .sort((a, b) => b[1] - a[1])
-            .map(([label, value]) => (
+            .map(([label, value], _i, rows) => (
               <div key={label} className="xprow">
                 <span className="grow small">{label}</span>
                 <span className="xprow__bar">
-                  <Notch value={value / Math.max(1, d.xp.total)} cells={8} thin label={label} />
+                  {/* Eight notches could not separate 2,450 from 1,436: as a
+                      share of the all-time total every source landed inside
+                      two cells of the other. Measured against the largest
+                      source instead, and drawn continuously, the comparison
+                      the panel exists to make is the thing you see. */}
+                  <Meter
+                    value={value / Math.max(1, rows[0][1])}
+                    label={`${label}, ${value.toLocaleString()} XP`}
+                  />
                 </span>
                 <span className="tiny faint num xprow__val">{value.toLocaleString()}</span>
               </div>
@@ -188,7 +196,7 @@ export function Progress() {
             return (
               <li key={s.name} className={`evoline__item ${reached ? 'is-reached' : ''}`}>
                 <span className="evoline__art" style={{ color: reached ? 'var(--accent)' : 'var(--ink-3)' }}>
-                  <Creature stage={s.stage} size={44} />
+                  <Creature stage={s.stage} size={50} />
                 </span>
                 <span className="tiny">{s.name}</span>
                 <span className="tiny faint num">Lv {s.level}</span>

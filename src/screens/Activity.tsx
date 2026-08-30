@@ -52,11 +52,22 @@ export function Activity({ navigate }: { navigate: (r: Route) => void }) {
   const remove = (id: string, amount: number) => {
     // Both halves of a Bank split go together, so say so rather than letting
     // one tap silently remove two rows.
-    const isTransfer = d.entries.find((e) => e.id === id)?.transferId != null
+    const target = d.entries.find((e) => e.id === id)
+    const isTransfer = target?.transferId != null
+    // Captured before the delete, so Undo can put back exactly what went — both
+    // halves of a split included. A ledger row is a financial record and the
+    // control that removes it sits on every one of them; a mis-tap on a phone
+    // should cost a tap to reverse, not the record itself.
+    const removed = d.entries.filter((e) =>
+      target?.transferId != null ? e.transferId === target.transferId : e.id === id)
     dispatch({ type: 'entry/delete', id })
-    toast(isTransfer
-      ? `Split of ${fmt.money(amount)} undone — money back in the Bank`
-      : `${fmt.money(amount)} entry removed`)
+    toast(
+      isTransfer
+        ? `Split of ${fmt.money(amount)} undone — money back in the Bank`
+        : `${fmt.money(amount)} entry removed`,
+      undefined,
+      { label: 'Undo', run: () => dispatch({ type: 'entries/add', entries: removed }) },
+    )
   }
 
   const sources: Array<{ key: string; label: string }> = [

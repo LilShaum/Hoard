@@ -75,14 +75,20 @@
 
   /* --------------------------------------------------------------- status
      Reserved. A status colour never doubles as a series colour, and never
-     carries meaning without an icon and a word beside it — two of these sit
-     below 3:1 on the light plane by design. */
-  --good: #0ca30c;
-  --warn: #fab219;
-  --bad:  #d03b3b;
-  --good-ink: #046004;
-  --warn-ink: #7a5300;
-  --bad-ink:  #a01f1f;
+     carries meaning without an icon and a word beside it.
+
+     These are botanical rather than traffic-light. A pure #0ca30c green over a
+     sage plane and an ink-navy accent is the single loudest tell of a stock
+     component library, and it was sitting on the vault rows, the budget gauge
+     and every deposit in the ledger — the busiest surfaces in the app. Held to
+     the same muted register as the rest of the palette, a state still reads at
+     a glance without looking borrowed from another product. */
+  --good: #35704a;
+  --warn: #a8761b;
+  --bad:  #9d3b31;
+  --good-ink: #1f4f30;
+  --warn-ink: #6d4a0a;
+  --bad-ink:  #8a2d24;
 
   /* Default accent: a deep ink-navy. Deliberately not green — the reserved
      status green sits beside it in almost every chart, and two greens a shade
@@ -117,9 +123,12 @@
   --on-wave: #04101f;  --on-ember: #ffffff; --on-leaf: #ffffff;  --on-volt: #ffffff;
   --on-bloom: #1a0710; --on-moss: #ffffff;  --on-frost: #04161a; --on-flare: #1c0606;
 
-  --good-ink: #46c246;
-  --warn-ink: #f6c452;
-  --bad-ink:  #f07b7b;
+  --good: #4e8f63;
+  --warn: #c08f2c;
+  --bad:  #b4544a;
+  --good-ink: #7fbf92;
+  --warn-ink: #dcb264;
+  --bad-ink:  #e0918a;
 
   --accent: #5b9bd0;
   --accent-ink: #04121f;

@@ -3,7 +3,7 @@ import { dispatch, useHoard } from '@/store/store'
 import { useFormat } from '@/app/format'
 import { Sheet } from '@/ui/Sheet'
 import { Glyph } from '@/ui/Glyphs'
-import { ActivityRow, Notch, PaceStatus, TypeChip } from '@/ui/parts'
+import { ActivityRow, Notch, PaceStatus, TypeChip, vaultTint } from '@/ui/parts'
 import { IconBack, IconEdit, IconPlus, IconTrash } from '@/ui/Icons'
 import { VaultEditor } from './VaultEditor'
 import { VaultProjection } from '@/charts/VaultProjection'
@@ -53,7 +53,7 @@ export function VaultDetail({ vaultId, navigate, onLog }: Props) {
   }
 
   const { pace } = vault
-  const tint = `var(--t-${vault.type})`
+  const { tint, bar } = vaultTint(vault.type)
 
   const remove = () => {
     dispatch({ type: 'vault/delete', id: vault.id })
@@ -97,7 +97,7 @@ export function VaultDetail({ vaultId, navigate, onLog }: Props) {
           </p>
 
           {vault.target != null && (
-            <Notch value={pace.fraction} color={tint} tall cells={20}
+            <Notch value={pace.fraction} color={bar} tall cells={20}
                    label={`${Math.round(pace.fraction * 100)}% of ${vault.name}`} />
           )}
 
