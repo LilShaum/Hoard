@@ -234,6 +234,43 @@ export function QuestRow({ quest, money, onClaim }: {
   )
 }
 
+/* =============================================================== vault line */
+
+/**
+ * A vault at a glance, for the home screen.
+ *
+ * Home used to render the full VaultCard — the same component the Vaults tab
+ * uses — three times over, each its own bordered panel with a header strip.
+ * That is most of a screen's height spent restating a tab that is one tap
+ * away, and it is why home read as cluttered: it had no view of its own, it
+ * was every other tab again at full size. This is the same information at a
+ * glance, in one panel, and the card stays where it belongs.
+ */
+export function VaultLine({ vault, money, onOpen }: VaultCardProps) {
+  const { tint, bar } = vaultTint(vault.type)
+  const { pace } = vault
+  return (
+    <button className="vline" onClick={onOpen}>
+      <span className="vline__glyph" style={{ color: tint }}>
+        <Glyph name={vault.glyph} size={17} />
+      </span>
+      <span className="vline__main">
+        <span className="vline__top">
+          <span className="vline__name truncate">{vault.name}</span>
+          <span className="num vline__figs">
+            {money(vault.saved)}
+            {vault.target != null && <span className="faint"> / {money(vault.target)}</span>}
+          </span>
+        </span>
+        {vault.target != null && (
+          <Notch value={pace.fraction} color={bar} thin
+                 label={`${Math.round(pace.fraction * 100)}% of ${vault.name}`} />
+        )}
+      </span>
+    </button>
+  )
+}
+
 /* ============================================================ activity row */
 
 export function ActivityRow({ entry, vaultName, glyph, type, money, action }: {

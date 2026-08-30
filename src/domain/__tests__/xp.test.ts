@@ -113,14 +113,14 @@ describe('ranks', () => {
 
   it('resolves a rank for every level', () => {
     for (let l = 1; l <= MAX_LEVEL; l++) expect(rankForLevel(l)).toBeTruthy()
-    expect(rankForLevel(1).key).toBe('novice')
-    expect(rankForLevel(10).key).toBe('warden')
-    expect(rankForLevel(14).key).toBe('warden')
-    expect(rankForLevel(99).key).toBe('grand')
+    expect(rankForLevel(1).key).toBe('scavenger')
+    expect(rankForLevel(10).key).toBe('coinwarden')
+    expect(rankForLevel(14).key).toBe('coinwarden')
+    expect(rankForLevel(99).key).toBe('sovereign')
   })
 
   it('knows what comes next, and that nothing follows the last', () => {
-    expect(nextRank(1)?.key).toBe('forager')
+    expect(nextRank(1)?.key).toBe('glintseeker')
     expect(nextRank(99)).toBeNull()
   })
 
@@ -155,7 +155,7 @@ describe('the companion line', () => {
   })
 
   it('knows what comes next, and that nothing follows the last form', () => {
-    expect(nextStage(1)?.name).toBe('Kitling')
+    expect(nextStage(1)?.name).toBe('Whelp')
     expect(nextStage(99)).toBeNull()
   })
 })

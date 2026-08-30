@@ -3,7 +3,7 @@ import { dispatch, useHoard, useRawState } from '@/store/store'
 import { useFormat } from '@/app/format'
 import { useCountUp } from '@/ui/useCountUp'
 import { Creature, stageForLevel, stageName } from '@/ui/Creature'
-import { Notch, Meter, Status, VaultCard, QuestRow, ActivityRow } from '@/ui/parts'
+import { Notch, Meter, Status, VaultLine, QuestRow, ActivityRow } from '@/ui/parts'
 import { IconPlus } from '@/ui/Icons'
 import { WeekSpark } from '@/charts/Charts'
 import { BUDGET_LABEL } from '@/domain/budget'
@@ -318,9 +318,9 @@ export function Home({ onLog, navigate }: Props) {
             </button>
           </div>
         ) : (
-          <div className="stack stack--sm">
+          <div className="panel vlines">
             {rail.slice(0, 3).map((v) => (
-              <VaultCard key={v.id} vault={v} money={fmt.money}
+              <VaultLine key={v.id} vault={v} money={fmt.money}
                          onOpen={() => navigate({ name: 'vault', vaultId: v.id })} />
             ))}
           </div>
@@ -337,7 +337,7 @@ export function Home({ onLog, navigate }: Props) {
             </button>
           </div>
           <ul className="panel activity-list">
-            {d.recent.slice(0, 5).map((e) => {
+            {d.recent.slice(0, 4).map((e) => {
               const v = e.vaultId ? d.vaultById.get(e.vaultId) : null
               return (
                 <ActivityRow

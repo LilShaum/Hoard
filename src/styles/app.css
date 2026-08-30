@@ -1047,6 +1047,35 @@ body[data-reduce-motion='true'] *::after {
 
 .claimbar:active { background: color-mix(in srgb, var(--accent) 20%, transparent); }
 
+/* ----------------------------------------------------------- vault lines */
+
+.vlines { overflow: hidden; }
+
+.vline {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-3);
+  text-align: left;
+}
+
+.vline + .vline { border-top: 1px solid var(--rule-soft); }
+.vline:active { background: var(--sunken); }
+
+.vline__glyph { flex: none; display: grid; place-items: center; }
+.vline__main { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1; }
+
+.vline__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.vline__name { font-weight: 600; font-size: 14px; }
+.vline__figs { font-size: 13px; flex: none; }
+
 /* -------------------------------------------------------------- activity */
 
 .activity-list { padding: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }

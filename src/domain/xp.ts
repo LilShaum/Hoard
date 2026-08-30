@@ -69,16 +69,25 @@ export type Rank = {
  * and your companion evolves on its own schedule — two ladders that reward
  * different lengths of commitment.
  */
+/**
+ * The ladder belongs to the hoard, not to a party sheet. Novice / Forager /
+ * Ranger / Adept are generic fantasy-RPG classes — they could sit in any game
+ * and say nothing about a dragon growing into the thing that guards your gold,
+ * which is the one idea this whole app is named after. Every title now names
+ * a stage of keeping a hoard.
+ *
+ * Each rank also unlocks an accent theme; those keys are unchanged.
+ */
 export const RANKS: Rank[] = [
-  { key: 'novice',   name: 'Novice',      minLevel: 1,  theme: 'field', blurb: 'Every hoard starts with one coin.' },
-  { key: 'forager',  name: 'Forager',     minLevel: 3,  theme: 'leaf',  blurb: 'Small, quick, and already collecting.' },
-  { key: 'keeper',   name: 'Keeper',      minLevel: 6,  theme: 'wave',  blurb: 'The habit has teeth now.' },
-  { key: 'warden',   name: 'Warden',      minLevel: 10, theme: 'volt',  blurb: 'You keep what you catch.' },
-  { key: 'ranger',   name: 'Ranger',      minLevel: 15, theme: 'ember', blurb: 'Consistency is starting to show.' },
-  { key: 'adept',    name: 'Adept',       minLevel: 21, theme: 'frost', blurb: 'You do not spend what you have not decided to spend.' },
-  { key: 'curator',  name: 'Curator',     minLevel: 28, theme: 'flare', blurb: 'The pile has a shape. And a guard.' },
-  { key: 'master',   name: 'Vaultmaster', minLevel: 36, theme: 'bloom', blurb: 'Saving is no longer something you try to do.' },
-  { key: 'grand',    name: 'Grandkeeper', minLevel: 45, theme: 'moss',  blurb: 'Legendary. Genuinely.' },
+  { key: 'scavenger',   name: 'Scavenger',   minLevel: 1,  theme: 'field', blurb: 'Every hoard starts with one coin.' },
+  { key: 'glintseeker', name: 'Glintseeker', minLevel: 3,  theme: 'leaf',  blurb: 'Small, quick, and already collecting.' },
+  { key: 'nestkeeper',  name: 'Nestkeeper',  minLevel: 6,  theme: 'wave',  blurb: 'The habit has teeth now.' },
+  { key: 'coinwarden',  name: 'Coinwarden',  minLevel: 10, theme: 'volt',  blurb: 'You keep what you catch.' },
+  { key: 'goldscale',   name: 'Goldscale',   minLevel: 15, theme: 'ember', blurb: 'Consistency is starting to show.' },
+  { key: 'trovekeeper', name: 'Trovekeeper', minLevel: 21, theme: 'frost', blurb: 'You do not spend what you have not decided to spend.' },
+  { key: 'hoardwarden', name: 'Hoardwarden', minLevel: 28, theme: 'flare', blurb: 'The pile has a shape. And a guard.' },
+  { key: 'hoardmaster', name: 'Hoardmaster', minLevel: 36, theme: 'bloom', blurb: 'Saving is no longer something you try to do.' },
+  { key: 'sovereign',   name: 'Sovereign',   minLevel: 45, theme: 'moss',  blurb: 'Legendary. Genuinely.' },
 ]
 
 export function rankForLevel(level: number): Rank {

@@ -58,12 +58,18 @@ import { createContext, useContext, useId } from 'react'
 
 export type Stage = 0 | 1 | 2 | 3 | 4
 
+/**
+ * One animal, five stages of the same dragon. "Sprig" is a plant and
+ * "Kitling" is a cat — names left over from when these were unrelated
+ * mascots, and still being printed beside a drawing of a dragon in an egg.
+ * These are the standard growth stages, which is what the drawings show.
+ */
 export const STAGE_AT_LEVEL: Array<{ level: number; stage: Stage; name: string }> = [
-  { level: 1, stage: 0, name: 'Sprig' },
-  { level: 6, stage: 1, name: 'Kitling' },
-  { level: 15, stage: 2, name: 'Drakelet' },
+  { level: 1, stage: 0, name: 'Hatchling' },
+  { level: 6, stage: 1, name: 'Whelp' },
+  { level: 15, stage: 2, name: 'Drake' },
   { level: 28, stage: 3, name: 'Wyrm' },
-  { level: 45, stage: 4, name: 'Sovereign' },
+  { level: 45, stage: 4, name: 'Elder Wyrm' },
 ]
 
 export function stageForLevel(level: number): Stage {
@@ -73,7 +79,7 @@ export function stageForLevel(level: number): Stage {
 }
 
 export function stageName(stage: Stage): string {
-  return STAGE_AT_LEVEL[stage]?.name ?? 'Sprig'
+  return STAGE_AT_LEVEL[stage]?.name ?? 'Hatchling'
 }
 
 export function nextStage(level: number): { level: number; name: string } | null {
