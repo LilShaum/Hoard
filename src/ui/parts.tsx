@@ -145,7 +145,7 @@ type VaultCardProps = {
 export function vaultTint(type: TypeKey) {
   return {
     tint: `var(--t-${type})`,
-    bar: `color-mix(in srgb, var(--t-${type}) 62%, var(--ink-2))`,
+    bar: `color-mix(in srgb, var(--t-${type}) 62%, var(--hue-damp))`,
   }
 }
 

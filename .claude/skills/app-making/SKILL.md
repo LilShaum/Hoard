@@ -109,6 +109,19 @@ content it belongs to.
 a neutral for anything filling real area. `color-mix(in srgb, var(--hue) 62%,
 var(--neutral))` is a one-line version of this.
 
+### Colours derived from a token whose role flips between themes
+
+Subtle and easy to ship. If you damp a hue by mixing it toward a "secondary
+ink" token, remember that token is *dark on a light background and light on a
+dark one*. The same mix then desaturates in one theme and brightens in the
+other — so the bars you carefully quietened come back louder in dark mode than
+they ever were in light.
+
+Mix toward a token that means the same thing in both themes (a recessive
+neutral, defined per theme), not one whose value inverts. And always screenshot
+both themes after any colour change: this is invisible in the code and obvious
+in a picture.
+
 ### Gradients, emoji, confetti, blurred drop shadows, everything pill-shaped
 
 Purple-to-blue gradients especially. These are decorative work that a border,

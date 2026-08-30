@@ -69,6 +69,14 @@
   --t-frost: #0099b0;
   --t-flare: #e34948;
 
+  /* What a type hue is pulled toward when it has to fill real area rather
+     than mark identity. It cannot be --ink-2: that token's *role* flips
+     between themes — dark on the light plane, light on the dark one — so
+     mixing toward it damps a hue in one theme and brightens it in the other.
+     On dark that turned every vault bar into a louder version of the colour
+     the mix exists to quieten. This is always a recessive neutral. */
+  --hue-damp: #59635b;
+
   /* Ink to place *on* a filled type chip, chosen per hue for contrast. */
   --on-wave: #ffffff;  --on-ember: #1a0d05; --on-leaf: #04170f;  --on-volt: #1c1400;
   --on-bloom: #26101a; --on-moss: #ffffff;  --on-frost: #04161a; --on-flare: #ffffff;
@@ -122,6 +130,8 @@
 
   --on-wave: #04101f;  --on-ember: #ffffff; --on-leaf: #ffffff;  --on-volt: #ffffff;
   --on-bloom: #1a0710; --on-moss: #ffffff;  --on-frost: #04161a; --on-flare: #1c0606;
+
+  --hue-damp: #3d4650;
 
   --good: #4e8f63;
   --warn: #c08f2c;
