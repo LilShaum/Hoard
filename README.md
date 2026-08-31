@@ -81,7 +81,7 @@ End-to-end tests drive the built app in a real browser:
 
 ```bash
 npm run build && npx vite preview --port 4173 &
-npm run test:e2e     # 26 browser assertions
+npm run test:e2e     # the full browser suite
 npm run shots        # screenshots of every screen -> shots/
 ```
 
@@ -138,8 +138,8 @@ your balance. A corrupt blob costs you a field, never the app.
 
 | Suite | What it covers |
 |---|---|
-| **297 unit tests** (Vitest) | The XP and level curves, ISO-week edge cases (2021-01-01 is 2020-W53), freeze resolution, every pace band, quest determinism, badge predicates, money parsing, and the persistence sanitiser. |
-| **39 end-to-end assertions** (Playwright) | Onboarding, saving, pace, the what-if slider, persistence across reloads, quest claiming, theme unlocks, the Bank's weekly split, the activity ledger and its filters, destructive flows, focus management, keyboard shortcuts, the backup nudge, the iOS install prompt and safe-area handling, opening with the network cut, and every screen rendering without a broken value. The suite runs against the built sub-path site — the exact shape GitHub Pages serves — and gates the deploy, so a wrong base path fails the build instead of reaching a phone. |
+| **Unit tests** (Vitest) | The XP and level curves, ISO-week edge cases (2021-01-01 is 2020-W53), freeze resolution, every pace band, quest determinism, badge predicates, money parsing, and the persistence sanitiser. |
+| **End-to-end assertions** (Playwright) | Onboarding, saving, pace, the what-if slider, persistence across reloads, quest claiming, theme unlocks, the Bank's weekly split, the activity ledger and its filters, destructive flows, focus management, keyboard shortcuts, the backup nudge, the iOS install prompt and safe-area handling, opening with the network cut, and every screen rendering without a broken value. The suite runs against the built sub-path site — the exact shape GitHub Pages serves — and gates the deploy, so a wrong base path fails the build instead of reaching a phone. |
 
 ## Privacy
 
