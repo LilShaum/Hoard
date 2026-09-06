@@ -5,6 +5,7 @@ import {
 import { clamp01, ratio } from './money'
 import { computeBudget, type BudgetView } from './budget'
 import { backupStatus, type BackupStatus } from './backup'
+import { reminderPlan, reminderStale, type ReminderPlan } from './remind'
 import { computePace, type Pace } from './pace'
 import { computeStreak, type StreakInfo } from './streak'
 import {
@@ -106,6 +107,9 @@ export type Derived = {
   distributedThisWeek: Cents
   /** Whether the history on this device is overdue a backup, and what is at risk. */
   backup: BackupStatus
+  /** The weekly calendar reminder the app would write today, and whether the
+      one already in the user's calendar has fallen out of step with it. */
+  reminder: { plan: ReminderPlan; stale: boolean }
 }
 
 /** Chronological, then by insertion — the order money actually moved. */
@@ -216,6 +220,7 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
   const offerDistribution = shouldOfferDistribution(bankPlan, state.progress.lastDistributedWeek, today)
   const bankRunway = weeksOfRunway(bankPlan)
   const backup = backupStatus(entries, state.progress.lastBackupAt)
+
   const sentThisWeek = distributedThisWeek(entries, today)
 
   const depositDays = depositDaysOf(external)
@@ -243,6 +248,18 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
     onPace: mTarget <= 0 || ratio(mSaved, mTarget) >= expectedFraction,
     hit: mTarget > 0 && mSaved >= mTarget,
   }
+  // Built from the vaults as they stand right now, which is what lets the
+  // panel notice that the event sitting in the calendar is out of date.
+  const plan = reminderPlan(
+    activeVaults.map((v) => ({
+      name: v.name,
+      requiredPerWeek: v.pace.requiredPerWeek,
+      remaining: v.pace.remaining,
+    })),
+    external,
+    Math.max(0, month.target - month.saved),
+  )
+  const reminder = { plan, stale: reminderStale(plan, state.progress.reminder) }
 
   /* -------------------------------------------------------------------- XP */
   const xpDeposits = depositXp(external)
@@ -339,6 +356,7 @@ export function derive(state: State, today: ISODate = todayISO()): Derived {
     bankRunway,
     distributedThisWeek: sentThisWeek,
     backup,
+    reminder,
   }
 }
 

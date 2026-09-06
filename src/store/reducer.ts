@@ -1,6 +1,7 @@
 import type { Cents, Entry, EntryKind, ISODate, Profile, State, ThemeKey, Vault } from '@/domain/types'
 import { todayISO } from '@/domain/dates'
 import { newId, type VaultDraft, makeVault } from './defaults'
+import type { ReminderState } from '@/domain/remind'
 
 export type Action =
   | { type: 'entry/add'; entry: Entry }
@@ -18,6 +19,7 @@ export type Action =
   | { type: 'entries/add'; entries: Entry[] }
   | { type: 'bank/distributed'; week: string }
   | { type: 'backup/done'; at: number }
+  | { type: 'reminder/exported'; reminder: ReminderState }
   | { type: 'state/replace'; state: State }
 
 export function reducer(state: State, action: Action): State {
@@ -31,6 +33,12 @@ export function reducer(state: State, action: Action): State {
       return action.entries.length === 0
         ? state
         : { ...state, entries: [...state.entries, ...action.entries] }
+
+    case 'reminder/exported':
+      return {
+        ...state,
+        progress: { ...state.progress, reminder: action.reminder },
+      }
 
     case 'backup/done':
       return { ...state, progress: { ...state.progress, lastBackupAt: action.at } }

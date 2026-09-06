@@ -51,6 +51,7 @@ export function initialState(): State {
       celebratedVaults: [],
       lastDistributedWeek: null,
       lastBackupAt: null,
+      reminder: null,
     },
   }
 }

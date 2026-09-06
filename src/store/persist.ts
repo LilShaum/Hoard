@@ -193,6 +193,9 @@ export function sanitise(raw: any): State {
       lastBackupAt: typeof pr.lastBackupAt === 'number' && Number.isFinite(pr.lastBackupAt)
         ? pr.lastBackupAt
         : null,
+      // Purely additive, so it rides on the sanitiser's default rather than a
+      // schema bump — an older save simply has no reminder yet.
+      reminder: isReminderState(pr.reminder) ? pr.reminder : null,
     },
   }
 }
@@ -238,4 +241,14 @@ export function importState(json: string): State | null {
   } catch {
     return null
   }
+}
+
+/** A stored reminder is only usable if every field survived the round trip. */
+function isReminderState(v: unknown): v is import('@/domain/remind').ReminderState {
+  if (typeof v !== 'object' || v === null) return false
+  const r = v as Record<string, unknown>
+  return typeof r.uid === 'string' && r.uid.length > 0
+    && typeof r.sequence === 'number' && Number.isFinite(r.sequence)
+    && typeof r.signature === 'string'
+    && typeof r.at === 'number' && Number.isFinite(r.at)
 }

@@ -1,3 +1,4 @@
+import type { ReminderState } from './remind'
 /** A local calendar day, 'YYYY-MM-DD'. Never a Date — timezones eat those. */
 export type ISODate = string
 
@@ -110,6 +111,12 @@ export type ProgressState = {
    * against each entry's createdAt.
    */
   lastBackupAt: number | null
+  /**
+   * The weekly calendar reminder, once one has been exported. Null until
+   * then, which is also how the app knows not to offer to *update* an event
+   * that does not exist.
+   */
+  reminder: ReminderState | null
 }
 
 export type State = {

@@ -10,6 +10,7 @@ import { BUDGET_LABEL } from '@/domain/budget'
 import type { QuestTier } from '@/domain/quests'
 import { toast } from '@/ui/toast'
 import { haptic, soundClaim } from '@/ui/feedback'
+import { buildICS, newReminderUid, weekdayName } from '@/domain/remind'
 
 const TIERS: Array<{ key: QuestTier; title: string; blurb: string }> = [
   { key: 'daily', title: 'Today', blurb: 'Resets at midnight' },
@@ -21,7 +22,9 @@ type Editing = null | 'monthly' | 'weekly'
 
 export function Quests() {
   const d = useHoard()
-  const profile = useRawState().profile
+  const stored = useRawState()
+  const profile = stored.profile
+  const progress = stored.progress
   const fmt = useFormat()
   const [editing, setEditing] = useState<Editing>(null)
   const [raw, setRaw] = useState('')
@@ -49,6 +52,37 @@ export function Quests() {
       `${ready.length} ${ready.length === 1 ? 'quest' : 'quests'} claimed`,
       ready.reduce((sum, q) => sum + q.xp, 0),
     )
+  }
+
+  /**
+   * Writes the calendar event and records what it said.
+   *
+   * The signature stored here is what later tells the panel that the event
+   * sitting in the user's calendar has fallen behind the vaults — a reminder
+   * quoting last month's figure is worse than none, because it is confidently
+   * wrong. Re-exporting reuses the same UID with a higher sequence, which is
+   * how iCalendar replaces an event rather than adding a second one.
+   */
+  const exportReminder = () => {
+    const plan = d.reminder.plan
+    const prev = progress.reminder
+    const next = {
+      uid: prev?.uid ?? newReminderUid(),
+      sequence: (prev?.sequence ?? 0) + 1,
+      signature: plan.signature,
+      at: Date.now(),
+    }
+    const ics = buildICS(plan, next, d.today)
+    const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'hoard-weekly-reminder.ics'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 2_000)
+    dispatch({ type: 'reminder/exported', reminder: next })
+    toast(prev ? 'Reminder updated' : 'Reminder added to your calendar')
   }
 
   const openEditor = (which: Exclude<Editing, null>) => {
@@ -168,6 +202,50 @@ export function Quests() {
       </section>
 
       {/* ------------------------------------------------------------ quests */}
+      {/* --------------------------------------------------------- reminder */}
+      <section className="panel">
+        <header className="panel__head">
+          <span className="label">Weekly reminder</span>
+          {progress.reminder && !d.reminder.stale && (
+            <span className="tiny faint">{weekdayName(d.reminder.plan.weekday)}s</span>
+          )}
+        </header>
+        <div className="panel__body stack stack--sm">
+          <p className="small">
+            <span className="remind__when">{weekdayName(d.reminder.plan.weekday)}</span>
+            {' — '}
+            {d.reminder.plan.title.replace('Hoard — ', '')}
+          </p>
+
+          {d.reminder.stale ? (
+            <>
+              <p className="tiny faint">
+                What's in your calendar no longer matches your vaults. Adding it again
+                replaces the old event rather than making a second one.
+              </p>
+              <button className="btn btn--primary btn--sm" onClick={exportReminder}>
+                Update the reminder
+              </button>
+            </>
+          ) : progress.reminder ? (
+            <p className="tiny faint">
+              In your calendar and up to date. Hoard will say here when it drifts.
+            </p>
+          ) : (
+            <>
+              <p className="tiny faint">
+                Hoard has no server and can't send you a notification. Your phone can:
+                this adds a repeating event to your own calendar, which keeps working
+                whether or not you open the app.
+              </p>
+              <button className="btn btn--primary btn--sm" onClick={exportReminder}>
+                Add to my calendar
+              </button>
+            </>
+          )}
+        </div>
+      </section>
+
       {claimable > 0 && (
         <button className="claimbar" onClick={claimAll}>
           <span className="grow">

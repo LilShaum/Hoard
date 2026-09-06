@@ -1047,6 +1047,9 @@ body[data-reduce-motion='true'] *::after {
 
 .claimbar:active { background: color-mix(in srgb, var(--accent) 20%, transparent); }
 
+/* The day carries the reminder — the amount is what it is *for*. */
+.remind__when { font-weight: 700; }
+
 /* ----------------------------------------------------------- vault lines */
 
 .vlines { overflow: hidden; }

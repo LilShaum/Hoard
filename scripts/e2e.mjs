@@ -662,6 +662,118 @@ await check('offline caching keeps exactly one version', async () => {
   await ctx.close()
 })
 
+/* -------------------------------------------------------------- reminders */
+/**
+ * Hoard cannot send a notification — no server, and the web cannot schedule
+ * one for while the app is closed. It writes a calendar event instead, so the
+ * thing that has to work is the file: a real download, parseable, repeating,
+ * and carrying the figures the vaults need *today*.
+ */
+await check('the weekly reminder downloads a real calendar event', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true })
+  const rp = await ctx.newPage()
+  await rp.goto(BASE, { waitUntil: 'domcontentloaded' })
+  await rp.evaluate(() => localStorage.clear())
+  await rp.goto(BASE, { waitUntil: 'networkidle' })
+  await rp.waitForSelector('.onboard')
+  await rp.getByRole('button', { name: 'See a demo instead' }).click()
+  await settle(rp)
+  await rp.goto(`${BASE}#/quests`, { waitUntil: 'networkidle' })
+  await rp.waitForTimeout(500)
+
+  const add = rp.getByRole('button', { name: 'Add to my calendar' })
+  assert.equal(await add.count(), 1, 'no reminder was offered')
+
+  const [download] = await Promise.all([
+    rp.waitForEvent('download', { timeout: 8000 }),
+    add.click(),
+  ])
+  const stream = await download.createReadStream()
+  const ics = await new Promise((resolve, reject) => {
+    let out = ''
+    stream.on('data', (c) => { out += c })
+    stream.on('end', () => resolve(out))
+    stream.on('error', reject)
+  })
+
+  assert.match(ics, /^BEGIN:VCALENDAR/, 'not a calendar file')
+  assert.match(ics, /BEGIN:VEVENT/, 'no event in it')
+  assert.match(ics, /RRULE:FREQ=WEEKLY/, 'the reminder does not repeat')
+  assert.match(ics, /^UID:.+@hoard\.local/m, 'no stable uid, so re-adding would duplicate')
+  assert.match(ics, /^SEQUENCE:1/m, 'first export should be sequence 1')
+  // The event must quote a real figure, not a placeholder.
+  assert.match(ics, /SUMMARY:Hoard .*\$[0-9]/, 'the event does not name an amount')
+
+  // Having been added, the panel should say so rather than offering again.
+  await rp.waitForTimeout(400)
+  assert.equal(await rp.getByRole('button', { name: 'Add to my calendar' }).count(), 0,
+    'still offering to add a reminder that exists')
+  assert.match(await rp.locator('.panel', { hasText: 'Weekly reminder' }).innerText(),
+    /up to date/i)
+
+  await ctx.close()
+})
+
+/**
+ * The whole point of a stored signature: money moves, the figure in the
+ * calendar goes out of date, and a reminder that is confidently wrong is
+ * worse than no reminder. Re-exporting must replace the event, not add a
+ * second one — same UID, higher SEQUENCE.
+ */
+await check('the reminder notices when it has gone out of date, and replaces itself', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true })
+  const rp = await ctx.newPage()
+  await rp.goto(BASE, { waitUntil: 'domcontentloaded' })
+  await rp.evaluate(() => localStorage.clear())
+  await rp.goto(BASE, { waitUntil: 'networkidle' })
+  await rp.waitForSelector('.onboard')
+  await rp.getByRole('button', { name: 'See a demo instead' }).click()
+  await settle(rp)
+
+  await rp.goto(`${BASE}#/quests`, { waitUntil: 'networkidle' })
+  await rp.waitForTimeout(400)
+  const [first] = await Promise.all([
+    rp.waitForEvent('download', { timeout: 8000 }),
+    rp.getByRole('button', { name: 'Add to my calendar' }).click(),
+  ])
+  const uidOf = async (dl) => {
+    const stream = await dl.createReadStream()
+    const text = await new Promise((res, rej) => {
+      let o = ''
+      stream.on('data', (c) => { o += c })
+      stream.on('end', () => res(o)); stream.on('error', rej)
+    })
+    return { uid: /^UID:(.+)$/m.exec(text)?.[1], seq: /^SEQUENCE:(\d+)$/m.exec(text)?.[1], text }
+  }
+  const one = await uidOf(first)
+  assert.equal(one.seq, '1')
+
+  // Money moves, so the figure the reminder quotes is no longer right.
+  await rp.goto(`${BASE}#/home`, { waitUntil: 'networkidle' })
+  await settle(rp)
+  await saveOn(rp, '250')
+  await settle(rp)
+  await rp.goto(`${BASE}#/quests`, { waitUntil: 'networkidle' })
+  await rp.waitForTimeout(500)
+
+  const update = rp.getByRole('button', { name: 'Update the reminder' })
+  assert.equal(await update.count(), 1, 'the reminder did not notice it was out of date')
+
+  const [second] = await Promise.all([
+    rp.waitForEvent('download', { timeout: 8000 }),
+    update.click(),
+  ])
+  const two = await uidOf(second)
+  assert.equal(two.uid, one.uid, 'a new uid would leave two reminders in the calendar')
+  assert.equal(two.seq, '2', 'the sequence must rise for a calendar to treat it as an update')
+
+  await rp.waitForTimeout(400)
+  assert.equal(await rp.getByRole('button', { name: 'Update the reminder' }).count(), 0,
+    'still asking to update after updating')
+
+  await ctx.close()
+})
+
 await browser.close()
 
 console.log(`\n${passed} passed, ${failures.length} failed`)
