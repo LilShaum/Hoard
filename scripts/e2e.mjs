@@ -774,6 +774,49 @@ await check('the reminder notices when it has gone out of date, and replaces its
   await ctx.close()
 })
 
+/**
+ * The share sheet is the iOS route and cannot be driven headlessly, so what is
+ * checked here is the thing that actually breaks: that a context which can do
+ * neither share nor download still shows the reminder rather than a button
+ * that silently does nothing.
+ */
+await check('a reminder that cannot be handed to the calendar is shown to set by hand', async () => {
+  const frame = await browser.newPage({ viewport: { width: 420, height: 900 } })
+  await frame.setContent(
+    `<style>html,body{margin:0;height:100%}iframe{border:0;width:100%;height:100%}</style>` +
+    `<iframe src="${BASE}#/quests" sandbox="allow-scripts allow-same-origin"></iframe>`,
+    { waitUntil: 'networkidle' },
+  )
+  const inner = frame.frameLocator('iframe')
+  const demo = inner.getByRole('button', { name: 'See a demo instead' })
+  if (await demo.count()) {
+    await demo.click()
+    await frame.waitForTimeout(2600)
+    for (let i = 0; i < 6; i++) {
+      const keep = inner.getByRole('button', { name: 'Keep going' })
+      if (await keep.count()) { await keep.click().catch(() => {}) } else break
+      await frame.waitForTimeout(300)
+    }
+  }
+  // Loading the demo navigates home, so the hash in the iframe src is gone by
+  // now — reach Goals the way a person would.
+  await inner.locator('.tabbar__btn', { hasText: 'GOALS' }).click()
+  await frame.waitForTimeout(800)
+
+  const add = inner.getByRole('button', { name: 'Add to my calendar' })
+  await add.waitFor({ timeout: 6000 })
+  await add.click()
+  await frame.waitForTimeout(500)
+
+  const panel = inner.locator('.panel', { hasText: 'Weekly reminder' })
+  const text = await panel.innerText()
+  assert.match(text, /set it yourself|Set it yourself/i, 'no manual fallback was offered')
+  assert.match(text, /^Every \w+day/m, 'the fallback does not say when to repeat it')
+  assert.match(text, /\$/, 'the fallback does not name an amount')
+
+  await frame.close()
+})
+
 await browser.close()
 
 console.log(`\n${passed} passed, ${failures.length} failed`)

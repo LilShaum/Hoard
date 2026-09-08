@@ -27,6 +27,16 @@ export function Quests() {
   const progress = stored.progress
   const fmt = useFormat()
   const [editing, setEditing] = useState<Editing>(null)
+  const [manual, setManual] = useState(false)
+
+  // A sandboxed frame cannot download; the published artifact runs in one.
+  const canDownload = (() => {
+    try {
+      return window.self === window.top
+    } catch {
+      return false
+    }
+  })()
   const [raw, setRaw] = useState('')
 
   const claim = (id: string, xp: number) => {
@@ -73,16 +83,51 @@ export function Quests() {
       at: Date.now(),
     }
     const ics = buildICS(plan, next, d.today)
-    const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }))
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'hoard-weekly-reminder.ics'
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    setTimeout(() => URL.revokeObjectURL(url), 2_000)
-    dispatch({ type: 'reminder/exported', reminder: next })
-    toast(prev ? 'Reminder updated' : 'Reminder added to your calendar')
+    const name = 'hoard-weekly-reminder.ics'
+    const type = 'text/calendar;charset=utf-8'
+    const done = () => {
+      dispatch({ type: 'reminder/exported', reminder: next })
+      toast(prev ? 'Reminder updated' : 'Reminder added to your calendar')
+    }
+
+    /**
+     * Three ways to hand a file to the phone, in order of what actually works
+     * where.
+     *
+     * The share sheet first, because that is the iOS answer: an installed web
+     * app largely ignores an <a download>, and data: URLs are blocked for
+     * top-level navigation, so the honest route is to give the file to the
+     * system and let the person pick Calendar. Desktop browsers mostly have no
+     * file sharing, so they take the download. And if neither is available —
+     * a sandboxed frame, an older browser — the text goes on screen rather
+     * than the button quietly doing nothing, which is the worst outcome of the
+     * three and the easiest one to ship by accident.
+     */
+    const file = new File([ics], name, { type })
+    if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+      navigator
+        .share({ files: [file], title: 'Hoard weekly reminder' })
+        .then(done)
+        // A cancelled share is a choice, not a failure: nothing was added, so
+        // nothing is recorded, and the panel still offers to try again.
+        .catch(() => {})
+      return
+    }
+
+    if (canDownload) {
+      const url = URL.createObjectURL(new Blob([ics], { type }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = name
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 2_000)
+      done()
+      return
+    }
+
+    setManual(true)
   }
 
   const openEditor = (which: Exclude<Editing, null>) => {
@@ -216,6 +261,18 @@ export function Quests() {
             {' — '}
             {d.reminder.plan.title.replace('Hoard — ', '')}
           </p>
+
+          {manual && (
+            <div className="stack stack--sm">
+              <p className="tiny faint">
+                This browser can't hand the file to your calendar. Set it yourself —
+                a weekly repeat is all it needs:
+              </p>
+              <p className="small remind__manual">
+                Every {weekdayName(d.reminder.plan.weekday)} · {d.reminder.plan.title}
+              </p>
+            </div>
+          )}
 
           {d.reminder.stale ? (
             <>

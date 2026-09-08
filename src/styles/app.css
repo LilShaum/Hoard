@@ -1047,6 +1047,14 @@ body[data-reduce-motion='true'] *::after {
 
 .claimbar:active { background: color-mix(in srgb, var(--accent) 20%, transparent); }
 
+.remind__manual {
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--sunken);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-1);
+  font-weight: 600;
+}
+
 /* The day carries the reminder — the amount is what it is *for*. */
 .remind__when { font-weight: 700; }
 
