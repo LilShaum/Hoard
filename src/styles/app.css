@@ -1058,6 +1058,21 @@ body[data-reduce-motion='true'] *::after {
 /* The day carries the reminder — the amount is what it is *for*. */
 .remind__when { font-weight: 700; }
 
+/* ----------------------------------------------------------- quest lines */
+
+.qlines { overflow: hidden; }
+
+.qline {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+}
+
+.qline + .qline { border-top: 1px solid var(--rule-soft); }
+.qline__title { flex: 1; min-width: 0; font-weight: 600; font-size: 14px; }
+.qline__xp { flex: none; font-size: 12px; color: var(--ink-2); }
+
 /* ----------------------------------------------------------- vault lines */
 
 .vlines { overflow: hidden; }

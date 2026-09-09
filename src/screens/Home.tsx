@@ -3,7 +3,7 @@ import { dispatch, useHoard, useRawState } from '@/store/store'
 import { useFormat } from '@/app/format'
 import { useCountUp } from '@/ui/useCountUp'
 import { Creature, stageForLevel, stageName } from '@/ui/Creature'
-import { Notch, Meter, Status, VaultLine, QuestRow, ActivityRow } from '@/ui/parts'
+import { Notch, Meter, Status, VaultLine, QuestLine, ActivityRow } from '@/ui/parts'
 import { IconPlus } from '@/ui/Icons'
 import { WeekSpark } from '@/charts/Charts'
 import { BUDGET_LABEL } from '@/domain/budget'
@@ -289,9 +289,9 @@ export function Home({ onLog, navigate }: Props) {
               All quests
             </button>
           </div>
-          <ul className="stack stack--sm">
+          <ul className="panel qlines">
             {shownQuests.map((q) => (
-              <QuestRow key={q.id} quest={q} money={fmt.money} onClaim={() => claim(q.id, q.xp)} />
+              <QuestLine key={q.id} quest={q} onClaim={() => claim(q.id, q.xp)} />
             ))}
           </ul>
         </section>

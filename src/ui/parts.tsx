@@ -220,9 +220,18 @@ export function QuestRow({ quest, money, onClaim }: {
           <span className="questrow__xp num">+{quest.xp} XP</span>
         </div>
         <p className="tiny muted">{questDetail(quest, money)}</p>
-        <Notch value={quest.fraction} cells={quest.unit === 'count' ? quest.target : 10} thin
-               color={quest.done ? 'var(--good)' : undefined} label={quest.title} />
-        <span className="tiny faint num">{TIER_LABEL[quest.tier]} · {value} / {goal}</span>
+        {/* A finished quest said the same thing three times over: a bar filled
+            end to end, a "1 / 1" beneath it, and a Claim button beside it. The
+            button is the signal; the bar and the count are for a quest still
+            being worked on. */}
+        {!quest.done && (
+          <>
+            <Notch value={quest.fraction} cells={quest.unit === 'count' ? quest.target : 10} thin
+                   label={quest.title} />
+            <span className="tiny faint num">{TIER_LABEL[quest.tier]} · {value} / {goal}</span>
+          </>
+        )}
+        {quest.done && <span className="tiny faint">{TIER_LABEL[quest.tier]}</span>}
       </div>
 
       {quest.claimable ? (
@@ -230,6 +239,26 @@ export function QuestRow({ quest, money, onClaim }: {
       ) : quest.claimed ? (
         <span className="questrow__done" aria-label="Claimed"><IconCheck size={15} strokeWidth={3} /></span>
       ) : null}
+    </li>
+  )
+}
+
+/* ================================================================ quest line */
+
+/**
+ * A claimable quest at a glance, for the home screen.
+ *
+ * Home rendered the same QuestRow the Goals tab uses — a bordered card each,
+ * with the detail line, the progress bar and the tier — which is a lot of
+ * screen for something you either tap or ignore. Here the title, the reward
+ * and the button are the whole story; the working detail stays on Goals.
+ */
+export function QuestLine({ quest, onClaim }: { quest: Quest; onClaim: () => void }) {
+  return (
+    <li className="qline">
+      <span className="qline__title truncate">{quest.title}</span>
+      <span className="qline__xp num">+{quest.xp}</span>
+      <button className="btn btn--primary btn--sm" onClick={onClaim}>Claim</button>
     </li>
   )
 }
