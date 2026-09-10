@@ -777,8 +777,17 @@ body[data-reduce-motion='true'] *::after {
   width: 66px; height: 66px;
 }
 
+/* A rank is one long uppercase word — "Hoardwarden", "Glintseeker" — set on a
+   wide axis, in a column that shares a phone's width with the drawing and the
+   streak. At a fixed 19px it had nowhere to go and ran straight through the
+   panel's right edge. It scales with the viewport now, and may break rather
+   than overflow if a longer name ever arrives. */
 .companion__rank {
-  font-size: 19px;
+  font-size: clamp(13.5px, 3.6vw, 19px);
+  /* Never mid-word: "SCAVENGE / R" is worse than the overflow it was fixing.
+     The size is what has to give, not the word. */
+  overflow-wrap: normal;
+  hyphens: none;
   font-weight: 800;
   font-variation-settings: 'wdth' var(--wide);
   text-transform: uppercase;

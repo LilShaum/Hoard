@@ -144,6 +144,17 @@ export function formatWeekday(iso: ISODate): string {
   return DOW[fromISO(iso).getDay()]
 }
 
+/** Indexed by getDay(), so Sunday first. */
+export const WEEKDAYS_LONG = [
+  'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
+]
+
+/** The abbreviated form belongs on an axis, not in a sentence: "Thu is as
+ *  good a day as any" reads like a calendar cell escaped into the copy. */
+export function formatWeekdayLong(iso: ISODate): string {
+  return WEEKDAYS_LONG[fromISO(iso).getDay()]
+}
+
 export function formatMonthLabel(key: string): string {
   const [y, m] = key.split('-').map(Number)
   return `${MONTHS[(m ?? 1) - 1]} ${y}`

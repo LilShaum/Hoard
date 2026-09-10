@@ -891,6 +891,61 @@ await check('a mistyped entry can be corrected, and the total follows', async ()
   await ctx.close()
 })
 
+/* ------------------------------------------------------ first-run clarity */
+/**
+ * A stranger opening this app met about fifteen ideas at once. The ones that
+ * have no job yet stay out of the way: the Bank has nothing to split when
+ * there is one vault, and rewards for activity are noise before any activity.
+ */
+await check('a brand-new account is not shown machinery it has no use for yet', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const fp = await ctx.newPage()
+  await fp.goto(BASE, { waitUntil: 'domcontentloaded' })
+  await fp.evaluate(() => localStorage.clear())
+  await fp.goto(BASE, { waitUntil: 'networkidle' })
+  await fp.waitForSelector('.onboard')
+  await fp.getByPlaceholder('Optional').fill('Jordan')
+  await fp.getByRole('button', { name: 'Next' }).click()
+  await fp.getByRole('button', { name: 'Next' }).click()
+  await fp.getByRole('button', { name: 'Christmas', exact: true }).click()
+  await fp.getByRole('button', { name: 'Next' }).click()
+  await fp.getByRole('button', { name: '$400' }).click()
+  await fp.getByRole('button', { name: 'Next' }).click()
+  await fp.getByRole('button', { name: '$150' }).click()
+  await fp.getByRole('button', { name: 'Start my hoard' }).click()
+  await settle(fp)
+  await fp.goto(`${BASE}#/home`, { waitUntil: 'networkidle' })
+  await fp.waitForTimeout(500)
+
+  const home = () => fp.locator('.app__scroll').innerText()
+  const before = await home()
+  assert.doesNotMatch(before, /\bBANK\b/,
+    'the Bank introduced itself before it had anything to do')
+  assert.doesNotMatch(before, /\bQUESTS\b/,
+    'rewards were offered before there was any activity to reward')
+  // What it *should* lead with.
+  assert.match(before, /Log your first deposit/)
+
+  // The rank has to fit its panel. It is one long uppercase word on a wide
+  // axis in a column shared with the drawing and the streak, and at a fixed
+  // size it ran straight through the panel's right edge.
+  const rank = fp.locator('.companion__rank').first()
+  const rb = await rank.boundingBox()
+  const pb = await fp.locator('.companion').first().boundingBox()
+  assert.ok(rb.x + rb.width <= pb.x + pb.width,
+    'the rank name overflows its panel')
+  assert.ok(rb.height < 40, 'the rank name wrapped or broke mid-word')
+
+  // The first deposit brings the rewards out.
+  await saveOn(fp, '25')
+  await settle(fp)
+  await fp.goto(`${BASE}#/home`, { waitUntil: 'networkidle' })
+  await fp.waitForTimeout(500)
+  assert.match(await home(), /\bQUESTS\b/, 'quests never appeared after a deposit')
+
+  await ctx.close()
+})
+
 await browser.close()
 
 console.log(`\n${passed} passed, ${failures.length} failed`)

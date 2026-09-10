@@ -5,7 +5,7 @@ import { useCountUp } from '@/ui/useCountUp'
 import { Creature, stageForLevel, stageName } from '@/ui/Creature'
 import { Notch, VaultLine, QuestLine, ActivityRow } from '@/ui/parts'
 import { IconPlus } from '@/ui/Icons'
-import { formatWeekday, isoWeekKey, plural, todayISO } from '@/domain/dates'
+import { formatWeekdayLong, isoWeekKey, plural, todayISO } from '@/domain/dates'
 import { toast } from '@/ui/toast'
 import { haptic, soundClaim } from '@/ui/feedback'
 import { makeTransfer } from '@/store/reducer'
@@ -183,8 +183,13 @@ export function Home({ onLog, navigate }: Props) {
         </div>
       </section>
 
-      {/* ----------------------------------------------------------- bank */}
-      {(d.generalSaved > 0 || d.bankPlan.needed > 0) && (
+      {/* ------------------------------------------------------------- bank
+          The Bank appears once it has a job. It used to show from the first
+          minute, announcing itself as dry and explaining splits to somebody
+          with one vault and no money — two new words before there was
+          anything to use them on. With a single vault there is nothing to
+          split: money goes straight to it. */}
+      {(d.generalSaved > 0 || d.activeVaults.length > 1) && (
         <section className="panel">
           <header className="panel__head">
             <span className="label">Bank</span>
@@ -251,8 +256,10 @@ export function Home({ onLog, navigate }: Props) {
           third copy — and it put a whole second idea (spending) on a screen
           whose subject is saving. */}
 
-      {/* ------------------------------------------------------------ quests */}
-      {shownQuests.length > 0 && (
+      {/* ----------------------------------------------------------- quests
+          Rewards for activity are noise before there is any activity. The
+          first deposit brings them out. */}
+      {d.entries.length > 0 && shownQuests.length > 0 && (
         <section className="section">
           <div className="section__head">
             <span className="label">Quests</span>
@@ -354,7 +361,7 @@ export function Home({ onLog, navigate }: Props) {
           <p className="empty__title">Your hoard starts at zero</p>
           <p className="small">
             Put something aside — even a fiver — and log it. Levels, streaks and ranks
-            do the rest. {formatWeekday(d.today)} is as good a day as any.
+            do the rest. {formatWeekdayLong(d.today)} is as good a day as any.
           </p>
         </section>
       )}
