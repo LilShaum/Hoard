@@ -1058,6 +1058,18 @@ body[data-reduce-motion='true'] *::after {
 /* The day carries the reminder — the amount is what it is *for*. */
 .remind__when { font-weight: 700; }
 
+.activity__open {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: 0;
+}
+
+.activity__open:not(.is-static):active { opacity: 0.6; }
+
 /* ----------------------------------------------------------- quest lines */
 
 .qlines { overflow: hidden; }

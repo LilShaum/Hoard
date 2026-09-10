@@ -302,20 +302,21 @@ export function VaultLine({ vault, money, onOpen }: VaultCardProps) {
 
 /* ============================================================ activity row */
 
-export function ActivityRow({ entry, vaultName, glyph, type, money, action }: {
+export function ActivityRow({ entry, vaultName, glyph, type, money, action, onEdit }: {
   entry: Entry
   vaultName: string
   glyph: Parameters<typeof Glyph>[0]['name']
   type: TypeKey | null
   money: (c: number) => string
   action?: ReactNode
+  onEdit?: () => void
 }) {
   const tone =
     entry.kind === 'deposit' ? 'is-in' : entry.kind === 'withdrawal' ? 'is-out' : 'is-spend'
   const sign = entry.kind === 'deposit' ? '+' : '−'
 
-  return (
-    <li className="activity">
+  const body = (
+    <>
       <span className="activity__glyph" style={type ? { color: `var(--t-${type})` } : undefined}>
         <Glyph name={glyph} size={17} />
       </span>
@@ -327,6 +328,23 @@ export function ActivityRow({ entry, vaultName, glyph, type, money, action }: {
         </span>
       </span>
       <span className={`activity__amount num ${tone}`}>{sign}{money(entry.amount)}</span>
+    </>
+  )
+
+  return (
+    <li className="activity">
+      {/* The row itself opens the entry for correction. A Bank transfer is
+          bookkeeping the app generated, and its two halves have to agree, so
+          it is not editable by hand — saying that is better than a tap that
+          appears to do nothing. */}
+      {onEdit ? (
+        <button className="activity__open" onClick={onEdit}
+                aria-label={`Correct this ${money(entry.amount)} entry`}>
+          {body}
+        </button>
+      ) : (
+        <span className="activity__open is-static">{body}</span>
+      )}
       {action}
     </li>
   )

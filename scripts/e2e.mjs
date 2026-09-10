@@ -817,6 +817,75 @@ await check('a reminder that cannot be handed to the calendar is shown to set by
   await frame.close()
 })
 
+/* ------------------------------------------------------------ correcting */
+/**
+ * The app could delete a financial record but never fix one: a mistyped
+ * amount meant removing the row and logging it again. The reducer could
+ * already do it — nothing called it.
+ */
+await check('a mistyped entry can be corrected, and the total follows', async () => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const ep = await ctx.newPage()
+  await ep.goto(BASE, { waitUntil: 'domcontentloaded' })
+  await ep.evaluate(() => localStorage.clear())
+  await ep.goto(BASE, { waitUntil: 'networkidle' })
+  await ep.waitForSelector('.onboard')
+  await ep.getByRole('button', { name: 'See a demo instead' }).click()
+  await settle(ep)
+
+  await ep.goto(`${BASE}#/activity`, { waitUntil: 'networkidle' })
+  await ep.waitForTimeout(600)
+  const totalOf = async () =>
+    Number((await ep.locator('.num--hero').first().innerText()).replace(/[^0-9.]/g, ''))
+  const before = await totalOf()
+
+  // Deposits are the ones that move the hoard total — a spend never touches
+  // it, by design. Only editable rows render as a button, so this also skips
+  // the halves of a Bank split.
+  await ep.getByRole('button', { name: 'Saved', exact: true }).click()
+  await ep.waitForTimeout(400)
+  const row = ep.locator('button.activity__open').first()
+  const was = Number((await row.locator('.activity__amount').innerText()).replace(/[^0-9.]/g, ''))
+
+  await row.click()
+  await ep.waitForSelector('.sheet')
+  assert.match(await ep.locator('.sheet').innerText(), /Correct this entry/i)
+
+  const field = ep.locator('.amount__input')
+  await field.fill('')
+  await field.type('12.34')
+  await ep.getByRole('button', { name: 'Save the correction' }).click()
+  await settle(ep)
+
+  const after = await totalOf()
+  const delta = Math.round((after - before) * 100) / 100
+  const expected = Math.round((12.34 - was) * 100) / 100
+  assert.equal(delta, expected,
+    `correcting ${was} to 12.34 moved the total by ${delta}, expected ${expected}`)
+
+  // It corrected the row rather than adding another one.
+  assert.match(await ep.locator('.activity__amount').first().innerText(), /12\.34/)
+
+  // Both halves of a Bank split have to agree, so neither may be edited by
+  // hand. The demo has no splits until one is taken, so make one first —
+  // asserting this against data that contains no transfers proves nothing.
+  await ep.goto(`${BASE}#/home`, { waitUntil: 'networkidle' })
+  await settle(ep)
+  const send = ep.getByRole('button', { name: 'Send to vaults' })
+  assert.equal(await send.count(), 1, 'no split was on offer to make a transfer with')
+  await send.click()
+  await settle(ep)
+
+  await ep.goto(`${BASE}#/activity`, { waitUntil: 'networkidle' })
+  await ep.waitForTimeout(600)
+  const rows = await ep.locator('.activity__open').count()
+  const editable = await ep.locator('button.activity__open').count()
+  assert.ok(rows > editable,
+    'a Bank split was editable by hand, so its two halves can be pulled apart')
+
+  await ctx.close()
+})
+
 await browser.close()
 
 console.log(`\n${passed} passed, ${failures.length} failed`)

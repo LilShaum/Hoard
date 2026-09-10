@@ -7,7 +7,7 @@ import { derive } from '@/domain/selectors'
 import { parseAmount } from '@/domain/money'
 import { niceMoney } from '@/domain/quests'
 import { addDays, formatShort, todayISO } from '@/domain/dates'
-import type { EntryKind } from '@/domain/types'
+import type { Entry, EntryKind } from '@/domain/types'
 import { addEntry } from '@/store/reducer'
 import { dispatch, getState, useHoard } from '@/store/store'
 import { toast } from '@/ui/toast'
@@ -19,6 +19,13 @@ type Props = {
   vaultId?: string | null
   /** Opens straight onto the spending tab — used by the week panel. */
   initialKind?: EntryKind
+  /**
+   * An existing entry to correct rather than a new one to add. The app could
+   * delete a financial record but never fix one, so a mistyped amount meant
+   * removing the row and logging it again — which loses when it was actually
+   * recorded, and is a strange thing to make someone do to correct a typo.
+   */
+  entry?: Entry | null
 }
 
 const KINDS: Array<{ key: EntryKind; label: string; verb: string }> = [
@@ -37,7 +44,7 @@ function quickAmounts(average: number, fallback: number[]): number[] {
   return [...set].sort((a, b) => a - b).slice(0, 4)
 }
 
-export function SaveSheet({ open, onClose, vaultId = null, initialKind = 'deposit' }: Props) {
+export function SaveSheet({ open, onClose, vaultId = null, initialKind = 'deposit', entry = null }: Props) {
   const d = useHoard()
   const fmt = useFormat()
 
@@ -50,14 +57,22 @@ export function SaveSheet({ open, onClose, vaultId = null, initialKind = 'deposi
 
   useEffect(() => {
     if (!open) return
-    setRaw('')
-    setKind(initialKind)
-    setTarget(vaultId)
-    setDate(todayISO())
-    setNote('')
+    if (entry) {
+      setRaw(String(entry.amount / 100))
+      setKind(entry.kind)
+      setTarget(entry.vaultId)
+      setDate(entry.date)
+      setNote(entry.note)
+    } else {
+      setRaw('')
+      setKind(initialKind)
+      setTarget(vaultId)
+      setDate(todayISO())
+      setNote('')
+    }
     const id = setTimeout(() => inputRef.current?.focus(), 110)
     return () => clearTimeout(id)
-  }, [open, vaultId, initialKind])
+  }, [open, vaultId, initialKind, entry])
 
   const cents = parseAmount(raw)
   const valid = cents != null && cents > 0
@@ -71,10 +86,26 @@ export function SaveSheet({ open, onClose, vaultId = null, initialKind = 'deposi
   )
 
   const openVaults = d.vaults.filter((v) => !v.archived)
-  const verb = KINDS.find((k) => k.key === kind)?.verb ?? 'Save it'
+  const verb = entry ? 'Save the correction' : KINDS.find((k) => k.key === kind)?.verb ?? 'Save it'
 
   const submit = () => {
     if (!valid) return
+
+    if (entry) {
+      // Only the fields on this form move. createdAt stays as it was, so the
+      // backup nudge still counts this as a record from when it was logged,
+      // and the id stays so nothing referring to it breaks.
+      dispatch({
+        type: 'entry/update',
+        id: entry.id,
+        patch: { amount: cents, vaultId: isSpend ? null : target, kind, date, note },
+      })
+      haptic(10)
+      toast(`Entry corrected to ${fmt.money(cents)}`)
+      onClose()
+      return
+    }
+
     const before = derive(getState()).xp.total
     dispatch(addEntry({ amount: cents, vaultId: isSpend ? null : target, kind, date, note }))
     const gained = derive(getState()).xp.total - before
@@ -106,7 +137,7 @@ export function SaveSheet({ open, onClose, vaultId = null, initialKind = 'deposi
     <Sheet
       open={open}
       onClose={onClose}
-      title="Log an amount"
+      title={entry ? 'Correct this entry' : 'Log an amount'}
       footer={
         <button className="btn btn--primary" disabled={!valid} onClick={submit}>
           <IconCheck size={16} /> {verb}

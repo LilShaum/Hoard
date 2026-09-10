@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { dispatch, useHoard } from '@/store/store'
 import { useFormat } from '@/app/format'
 import { ActivityRow } from '@/ui/parts'
+import { SaveSheet } from '@/app/SaveSheet'
 import { IconBack, IconTrash } from '@/ui/Icons'
 import { formatMonthLabel, monthKey } from '@/domain/dates'
 import { depositsOf, signed, spendOf, withdrawalsOf } from '@/domain/stats'
@@ -20,6 +21,7 @@ export function Activity({ navigate }: { navigate: (r: Route) => void }) {
   const d = useHoard()
   const fmt = useFormat()
   const [filter, setFilter] = useState<Filter>('all')
+  const [editing, setEditing] = useState<Entry | null>(null)
   const [source, setSource] = useState<string>('all')
 
   const filtered = useMemo(() => {
@@ -142,6 +144,7 @@ export function Activity({ navigate }: { navigate: (r: Route) => void }) {
                       glyph={v?.glyph ?? (e.kind === 'spend' ? 'bag' : 'coin')}
                       type={v?.type ?? null}
                       money={fmt.money}
+                      onEdit={e.transferId == null ? () => setEditing(e) : undefined}
                       action={
                         <button
                           className="btn btn--icon activity__del"
@@ -159,6 +162,12 @@ export function Activity({ navigate }: { navigate: (r: Route) => void }) {
           )
         })
       )}
+
+      <SaveSheet
+        open={editing != null}
+        entry={editing}
+        onClose={() => setEditing(null)}
+      />
     </div>
   )
 }
