@@ -196,6 +196,7 @@ export function sanitise(raw: any): State {
       // Purely additive, so it rides on the sanitiser's default rather than a
       // schema bump — an older save simply has no reminder yet.
       reminder: isReminderState(pr.reminder) ? pr.reminder : null,
+      tour: pr.tour === 'demo' || pr.tour === 'demo-read' ? pr.tour : null,
     },
   }
 }

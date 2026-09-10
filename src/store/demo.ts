@@ -122,5 +122,8 @@ export function demoState(): State {
     },
     vaults,
     entries: entries.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0)),
+    // Marked as the demo so the app can say whose account this is, and can
+    // stop nagging about backing up a history that belongs to nobody.
+    progress: { ...base.progress, tour: 'demo' },
   }
 }

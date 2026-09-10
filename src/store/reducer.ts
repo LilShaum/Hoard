@@ -20,6 +20,7 @@ export type Action =
   | { type: 'bank/distributed'; week: string }
   | { type: 'backup/done'; at: number }
   | { type: 'reminder/exported'; reminder: ReminderState }
+  | { type: 'tour/dismiss' }
   | { type: 'state/replace'; state: State }
 
 export function reducer(state: State, action: Action): State {
@@ -39,6 +40,9 @@ export function reducer(state: State, action: Action): State {
         ...state,
         progress: { ...state.progress, reminder: action.reminder },
       }
+
+    case 'tour/dismiss':
+      return { ...state, progress: { ...state.progress, tour: 'demo-read' } }
 
     case 'backup/done':
       return { ...state, progress: { ...state.progress, lastBackupAt: action.at } }

@@ -269,7 +269,7 @@ await check('the progress screen draws its charts on real data', async () => {
 })
 
 /* --------------------------------------------------------------- spending */
-await check('a spend never touches the hoard and shows in the week panel', async () => {
+await check('a spend never touches the hoard, and lands on the spending screen', async () => {
   await settle()
   await go('home')
   const hoardBefore = await money()
@@ -280,8 +280,13 @@ await check('a spend never touches the hoard and shows in the week panel', async
   await page.waitForTimeout(1400)
   await settle()
   assert.equal(await money(), hoardBefore, 'spending moved the savings total')
-  const week = await page.locator('.panel', { hasText: 'Safe to spend today' }).first().innerText()
-  assert.match(week, /spent/i)
+
+  // The week panel used to sit on home as well. Spending belongs with the
+  // limit it is measured against, so it is on Goals and only there.
+  await go('quests')
+  await page.waitForTimeout(400)
+  const limit = await page.locator('.panel', { hasText: 'Weekly spending limit' }).first().innerText()
+  assert.match(limit, /spent/i, 'the spend did not reach the screen that tracks it')
 })
 
 await check('the weekly limit can be set and drives safe-to-spend', async () => {

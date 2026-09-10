@@ -3,10 +3,8 @@ import { dispatch, useHoard, useRawState } from '@/store/store'
 import { useFormat } from '@/app/format'
 import { useCountUp } from '@/ui/useCountUp'
 import { Creature, stageForLevel, stageName } from '@/ui/Creature'
-import { Notch, Meter, Status, VaultLine, QuestLine, ActivityRow } from '@/ui/parts'
+import { Notch, VaultLine, QuestLine, ActivityRow } from '@/ui/parts'
 import { IconPlus } from '@/ui/Icons'
-import { WeekSpark } from '@/charts/Charts'
-import { BUDGET_LABEL } from '@/domain/budget'
 import { formatWeekday, isoWeekKey, plural, todayISO } from '@/domain/dates'
 import { toast } from '@/ui/toast'
 import { haptic, soundClaim } from '@/ui/feedback'
@@ -26,7 +24,9 @@ function greeting(name: string): string {
 
 export function Home({ onLog, navigate }: Props) {
   const d = useHoard()
-  const name = useRawState().profile.name
+  const stored = useRawState()
+  const name = stored.profile.name
+  const progress = stored.progress
   const fmt = useFormat()
   const total = useCountUp(d.totalSaved)
   const stage = stageForLevel(d.level.level)
@@ -50,7 +50,6 @@ export function Home({ onLog, navigate }: Props) {
   }
 
   const rail = d.activeVaults.length > 0 ? d.activeVaults : d.completedVaults
-  const budgetTone = d.budget.status === 'over' ? 'bad' : d.budget.status === 'close' ? 'warn' : 'good'
 
   const distribute = () => {
     const today = todayISO()
@@ -65,6 +64,30 @@ export function Home({ onLog, navigate }: Props) {
 
   return (
     <div className="stack stack--lg">
+      {/* The demo drops a stranger into a full account — six months of
+          somebody else's saving, and a screen of words (hoard, vault, Bank)
+          that mean nothing yet. Two sentences of orientation costs almost
+          nothing and is the difference between reading the screen and
+          bouncing off it. */}
+      {progress.tour === 'demo' && (
+        <section className="panel tournote">
+          <div className="panel__body stack stack--sm">
+            <p className="small">
+              <strong>This is a demo account.</strong> Six months of someone else's
+              saving, so you can see what the app looks like once it is being used.
+            </p>
+            <p className="tiny muted">
+              A <strong>vault</strong> is one thing you are saving for. The{' '}
+              <strong>Bank</strong> is money you have put aside but not yet assigned
+              to one. Your <strong>hoard</strong> is the two of them together.
+            </p>
+            <button className="btn btn--sm" onClick={() => dispatch({ type: 'tour/dismiss' })}>
+              Got it
+            </button>
+          </div>
+        </section>
+      )}
+
       {/* ---------------------------------------------------------- companion */}
       <section className="panel companion">
         <div className="companion__art" style={{ color: 'var(--accent)' }}>
@@ -222,63 +245,11 @@ export function Home({ onLog, navigate }: Props) {
         </section>
       )}
 
-      {/* --------------------------------------------------------- this week */}
-      <section className="panel">
-        <header className="panel__head">
-          <span className="label">This week</span>
-          {d.budget.limit > 0 && (
-            <Status tone={budgetTone}>{BUDGET_LABEL[d.budget.status]}</Status>
-          )}
-        </header>
-
-        {d.budget.limit > 0 ? (
-          <>
-            <div className="panel__body stack stack--md">
-              <div className="safe">
-                <span className="label">Safe to spend today</span>
-                <p className="num safe__figure">{fmt.money(d.budget.safePerDay)}</p>
-                <p className="tiny faint">
-                  <span className="num">{fmt.money(d.budget.remaining)}</span> left over{' '}
-                  {d.budget.daysLeft} {d.budget.daysLeft === 1 ? 'day' : 'days'}
-                </p>
-              </div>
-
-              <div className="stack stack--sm">
-                <div className="row row--between">
-                  <span className="tiny faint num">{fmt.money(d.budget.spent)} spent</span>
-                  <span className="tiny faint num">limit {fmt.money(d.budget.limit)}</span>
-                </div>
-                <Meter
-                  value={d.budget.fraction}
-                  color={d.budget.status === 'over' ? 'var(--bad)'
-                       : d.budget.status === 'close' ? 'var(--warn)' : 'var(--good)'}
-                  label="Weekly spending against the limit"
-                />
-              </div>
-
-              <WeekSpark perDay={d.budget.perDay} limit={d.budget.limit} money={fmt.money} />
-            </div>
-
-            {d.budget.streak > 0 && (
-              <footer className="panel__foot tiny faint">
-                <span className="num">{d.budget.streak}</span>{' '}
-                {d.budget.streak === 1 ? 'week' : 'weeks'} running under the limit
-              </footer>
-            )}
-          </>
-        ) : (
-          <div className="panel__body stack stack--sm">
-            <p className="small muted">
-              A weekly spending limit is the other half of saving: most months miss the
-              deposit goal because of what left the current account, not what failed to
-              arrive.
-            </p>
-            <button className="btn btn--sm" onClick={() => navigate({ name: 'quests' })}>
-              Set a weekly spending limit
-            </button>
-          </div>
-        )}
-      </section>
+      {/* The week's spending used to sit here too: safe-to-spend, the limit,
+          and a bar per day. Goals already carries the limit and its status,
+          and Progress already draws the same per-day chart, so this was a
+          third copy — and it put a whole second idea (spending) on a screen
+          whose subject is saving. */}
 
       {/* ------------------------------------------------------------ quests */}
       {shownQuests.length > 0 && (

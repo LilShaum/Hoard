@@ -117,6 +117,13 @@ export type ProgressState = {
    * that does not exist.
    */
   reminder: ReminderState | null
+  /**
+   * Whether this is the demo account, and whether its orientation note has
+   * been read. Dismissing the note moves 'demo' to 'demo-read' rather than
+   * clearing it, because the app still needs to know whose data this is —
+   * nagging someone to back up a demo history is nagging about nothing.
+   */
+  tour: 'demo' | 'demo-read' | null
 }
 
 export type State = {

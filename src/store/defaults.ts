@@ -52,6 +52,7 @@ export function initialState(): State {
       lastDistributedWeek: null,
       lastBackupAt: null,
       reminder: null,
+      tour: null,
     },
   }
 }

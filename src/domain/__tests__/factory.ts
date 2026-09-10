@@ -63,6 +63,7 @@ export function state(over: Partial<State> = {}): State {
       lastDistributedWeek: null,
       lastBackupAt: null,
     reminder: null,
+    tour: null,
     },
     ...over,
   }
