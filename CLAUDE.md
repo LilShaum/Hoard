@@ -6,8 +6,22 @@ UI work here — it was written from this project's own mistakes.
 
 ## How to work with me (the person you are talking to)
 
-I steer in short messages, often just "go". That means *proceed*, not *explain
-the plan*. Get on with it and report what happened.
+**Plan before you change anything. Always.** Before touching a file, say what
+you are going to change, why, and what it might break. Keep it short — a
+handful of lines, not a document. Then stop and wait.
+
+"go" is the approval of a plan you have already put in front of me. It is not
+permission to start from a standing start. When a fresh request arrives, the
+first thing back is the plan.
+
+This is not ceremony. Diving straight in is how a state flag ended up meaning
+two things at once and had to be ripped out, how two regression tests got
+written against conditions that could not fail, and how a CSS selector broke a
+row layout that nobody was looking at. A few lines of plan would have caught
+all three before they cost a round.
+
+I steer in short messages. Once a plan is agreed, get on with it and report
+what happened rather than narrating.
 
 **Do not re-argue a decision I have closed.** If I say "do X if it's easier"
 and you find it is not easier, say so once, briefly, and move on. Restating the
