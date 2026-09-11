@@ -512,6 +512,30 @@ await check('the page carries an apple-touch-icon, so iOS does not use a screens
   await ctx.close()
 })
 
+/**
+ * Icon paths in a manifest resolve against the manifest's own URL. When the
+ * manifest was itself a data: URI they could not resolve at all, and an
+ * Android install fell back to a screenshot with nothing reporting an error.
+ */
+await check('the manifest offers icons that actually resolve', async () => {
+  await page.goto(BASE, { waitUntil: 'networkidle' })
+  const href = await page.locator('link[rel="manifest"]').getAttribute('href')
+  assert.ok(href, 'no manifest')
+  const url = new URL(href, page.url()).href
+  const manifest = await (await page.request.get(url)).json()
+  const icons = manifest.icons ?? []
+  assert.ok(icons.length > 0, 'the manifest declares no icons')
+  assert.ok(
+    icons.some((i) => i.purpose === 'maskable'),
+    'no maskable icon, so Android crops the mark to fit its own shape',
+  )
+  for (const icon of icons) {
+    const at = new URL(icon.src, url).href
+    const res = await page.request.get(at)
+    assert.equal(res.status(), 200, `${icon.src} is declared but not served`)
+  }
+})
+
 /* --------------------------------------------------------------- the bank */
 await check('the Bank offers a weekly split into vaults, and taking it moves the money', async () => {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
