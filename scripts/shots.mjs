@@ -41,8 +41,10 @@ await page.getByRole('button', { name: 'Next' }).click()
 await shot('03-vault')
 await page.getByRole('button', { name: 'Next' }).click()
 await shot('04-monthly')
+await page.getByRole('button', { name: 'Next' }).click()
+await shot('05-companion')
 await page.getByRole('button', { name: 'Start my hoard' }).click()
-await shot('05-home-fresh')
+await shot('05b-home-fresh')
 
 // 2. The demo hoard: the app as it looks lived-in.
 await page.goto(`${BASE}#/profile`, { waitUntil: 'networkidle' })
@@ -57,7 +59,9 @@ for (let i = 0; i < 3; i++) {
 await page.goto(`${BASE}#/home`, { waitUntil: 'networkidle' })
 await shot('06-home-demo')
 
-await page.getByRole('button', { name: 'Save something' }).click()
+// Home's primary action is named for what it does, and the name changes on a
+// brand-new account; match either rather than pinning one wording.
+await page.getByRole('button', { name: /Log (something|your first deposit)/ }).click()
 await shot('07-save-sheet')
 await page.keyboard.press('Escape')
 
